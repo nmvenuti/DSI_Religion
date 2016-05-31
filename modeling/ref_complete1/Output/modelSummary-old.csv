@@ -1,0 +1,16 @@
+,ModelName,ANN,RF,SVM,Mean
+1,Topic Models,21.43%,55.10%,55.10%,43.88%
+2,Total Sentiment,65.31%,68.37%,71.43%,68.37%
+3,Coupled sentiment-words,66.33%,63.27%,70.41%,66.67%
+4,Coupled sentiment-docs,61.22%,60.20%,62.24%,61.22%
+5,Full model-Semantic,51.02%,48.98%,50.00%,50.00%
+6,ACOM,65.31%,51.02%,65.31%,60.54%
+7,Semco,66.33%,48.98%,65.31%,60.20%
+8,Networks,66.33%,72.45%,75.51%,71.43%
+9,Total Judgements,66.33%,75.51%,73.47%,71.77%
+10,Perceived Judgements,68.37%,57.14%,68.37%,64.63%
+11,Number Judgements,73.47%,66.33%,73.47%,71.09%
+12,Full model-Performative,77.55%,84.69%,79.59%,80.61%
+13,Full model,66.33%,65.31%,55.10%,62.24%
+14,Optimal Model,66.33%,84.69%,83.67%,78.23%
+,,62.97%,64.43%,67.78%,
