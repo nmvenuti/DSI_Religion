@@ -11,6 +11,7 @@ Modeling grid search
 import pandas as pd
 import glob
 
+from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn.ensemble import RandomForestRegressor
 
@@ -54,6 +55,7 @@ signalDF.reset_index(inplace=True)
 groupNameList=['WBC', 'PastorAnderson', 'NaumanKhan', 'DorothyDay', 'JohnPiper', 'Shepherd',
 'Rabbinic', 'Unitarian', 'MehrBaba']
 groupRankList=[1,2,3,4,4,4,6,7,8]
+#groupRankList=[1,2,3.5,4,4,4,6,7,7.5]
 
 groupRankDF=pd.DataFrame([[groupNameList[i],groupRankList[i]] for i in range(len(groupNameList))],columns=['groupName','rank'])
 
@@ -62,9 +64,9 @@ signalDF['groupName']=signalDF['group'].map(lambda x: x.split('_')[0])
 signalDF=signalDF.merge(groupRankDF, on='groupName')
 
 
-###################################################
-#####Hyperparameter optimzation for RF and SVM#####
-###################################################
+##############################################################
+#####Hyperparameter optimzation for RF and SVM Regression#####
+##############################################################
 
 #Set up variables
 #xList=[x for x in signalDF.columns if x not in ['rank','group','groupName']]
@@ -107,32 +109,7 @@ for C in cList:
 
 svmParamDF=pd.DataFrame(svmParamList,columns=['C','epsilon','kernel','degree','coef','accuracy'])                    
 
-
-svmParamList=[]
-cList=[0.01,0.05,0.1,0.5,1.0,1.5,2.0,2.5,3.0,3.5]
-epsilonList=[0.01,0.05,0.1,0.5,1.0]
-kernelList=['linear','poly','rbf','sigmoid']
-degreeList=[0,1,2,3,4]
-coefList=[0,1,2,3]
-for C in cList:
-    for epsilon in epsilonList: 
-        for kernel in kernelList:
-            for degree in degreeList:
-                for coef in coefList:
-                    signalSVR=svm.SVR(C=C,epsilon=epsilon,kernel=kernel,degree=degree,coef0=coef,max_iter=100000)
-                    signalSVR.fit(signalTrainDF[xList],signalTrainDF[yList])
-
-                    #Predict New Data
-                    yPred=signalSVR.predict(signalTestDF[xList])
-                    
-                    #Get accuracy
-                    svmAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
-                    
-                    #Add to parameter list
-                    svmParamList.append([C,epsilon,kernel,degree,coef,svmAccuracy])
-
-svmParamDF=pd.DataFrame(svmParamList,columns=['C','epsilon','kernel','degree','coef','accuracy'])
-svmParamDF.to_csv('../DSI_Religion/variableAnalysis/svmOptimization.csv')
+#svmParamDF.to_csv('../DSI_Religion/variableAnalysis/svmOptimization.csv')
 
 #Random Forest Regressor
 estimatorList=[10,25,50,100,150,200]
@@ -163,5 +140,61 @@ for estimator in estimatorList:
 
 #Convert to dataframe
 rfParamDF=pd.DataFrame(rfParamList,columns=['estimator','depth','bs','split','feature','accuracy'])
-rfParamDF.to_csv('../DSI_Religion/variableAnalysis/rfOptimization.csv')
-    
+#rfParamDF.to_csv('../DSI_Religion/variableAnalysis/rfOptimization.csv')
+
+
+#Perform same analysis with scaled data
+#Scale the data
+sc = StandardScaler()
+sc=sc.fit(signalTrainDF[xList])
+signalStdTrainDF= pd.DataFrame(sc.transform(signalTrainDF[xList]),columns=xList)
+signalStdTestDF = pd.DataFrame(sc.transform(signalTestDF[xList]),columns=xList)
+
+#STD SVM
+svmParamList=[]
+for C in cList:
+    for epsilon in epsilonList: 
+        for kernel in kernelList:
+            for degree in degreeList:
+                for coef in coefList:
+                    signalSVR=svm.SVR(C=C,epsilon=epsilon,kernel=kernel,degree=degree,coef0=coef,max_iter=100000)
+                    signalSVR.fit(signalStdTrainDF[xList],signalTrainDF[yList])
+
+                    #Predict New Data
+                    yPred=signalSVR.predict(signalStdTestDF[xList])
+                    
+                    #Get accuracy
+                    svmAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+                    
+                    #Add to parameter list
+                    svmParamList.append([C,epsilon,kernel,degree,coef,svmAccuracy])
+
+svmStdParamDF=pd.DataFrame(svmParamList,columns=['C','epsilon','kernel','degree','coef','accuracy'])                    
+
+svmStdParamDF.to_csv('../DSI_Religion/variableAnalysis/svmStdOptimization.csv')
+
+#STDRandom Forest Regressor
+rfParamList=[]
+for estimator in estimatorList:
+    for depth in depthList:
+        for bs in bsList:
+            for feature in featureList:
+                for split in splitList:
+                    rfModel=RandomForestRegressor(n_estimators=estimator,max_depth=depth,
+                                                  min_samples_split=split, max_features=feature,
+                                                  bootstrap=bs,random_state=0,n_jobs=-1)
+        
+                    rfModel.fit(signalStdTrainDF[xList],signalTrainDF[yList])
+        
+                    #Predict New Data
+                    yPred=rfModel.predict(signalStdTestDF[xList])
+                    
+                    #Get accuracy
+                    rfAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+                            
+                    
+                    rfParamList.append([estimator,depth,bs,split,feature,rfAccuracy])
+
+#Convert to dataframe
+rfStdParamDF=pd.DataFrame(rfParamList,columns=['estimator','depth','bs','split','feature','accuracy'])
+rfStdParamDF.to_csv('../DSI_Religion/variableAnalysis/rfStdOptimization.csv')    
