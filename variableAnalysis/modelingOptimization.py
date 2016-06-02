@@ -9,16 +9,19 @@ Modeling grid search
 
 #Import packages
 import pandas as pd
+import numpy as np
 import glob
 
 from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn.ensemble import RandomForestRegressor
+import time
+#from sknn import mlp
 
 ################################
 #####Import and clean data######
 ################################
-
+startTime=time.time()
 #Define data filepath
 dataPath='../DSI_Religion/modeling/ref_complete1/'
 
@@ -64,9 +67,9 @@ signalDF['groupName']=signalDF['group'].map(lambda x: x.split('_')[0])
 signalDF=signalDF.merge(groupRankDF, on='groupName')
 
 
-##############################################################
-#####Hyperparameter optimzation for RF and SVM Regression#####
-##############################################################
+##################################################################
+#####Hyperparameter optimzation for MLP RF and SVM Regression#####
+##################################################################
 
 #Set up variables
 #xList=[x for x in signalDF.columns if x not in ['rank','group','groupName']]
@@ -81,7 +84,6 @@ signalTrainDF=signalDF[signalDF['group'].isin(trainIndex)]
 signalTestDF=signalDF[signalDF['group'].isin(testIndex)]
 
 yActual=signalTestDF['rank'].tolist()
-
 
 #SVM
 svmParamList=[]
@@ -109,7 +111,7 @@ for C in cList:
 
 svmParamDF=pd.DataFrame(svmParamList,columns=['C','epsilon','kernel','degree','coef','accuracy'])                    
 
-#svmParamDF.to_csv('../DSI_Religion/variableAnalysis/svmOptimization.csv')
+svmParamDF.to_csv('../DSI_Religion/variableAnalysis/svmOptimization.csv')
 
 #Random Forest Regressor
 estimatorList=[10,25,50,100,150,200]
@@ -140,7 +142,7 @@ for estimator in estimatorList:
 
 #Convert to dataframe
 rfParamDF=pd.DataFrame(rfParamList,columns=['estimator','depth','bs','split','feature','accuracy'])
-#rfParamDF.to_csv('../DSI_Religion/variableAnalysis/rfOptimization.csv')
+rfParamDF.to_csv('../DSI_Religion/variableAnalysis/rfOptimization.csv')
 
 
 #Perform same analysis with scaled data
@@ -198,3 +200,78 @@ for estimator in estimatorList:
 #Convert to dataframe
 rfStdParamDF=pd.DataFrame(rfParamList,columns=['estimator','depth','bs','split','feature','accuracy'])
 rfStdParamDF.to_csv('../DSI_Religion/variableAnalysis/rfStdOptimization.csv')    
+
+
+
+##MLP
+#nnParamList=[]
+#momentumList=[ n/10 for n in list(range(1,10,2))] 
+#learningRateList=[ n/1000 for n in list(range(5,51,5))]
+#unitList=[10,25,50,100,150,200]
+#learningRuleList=['sgd','momentum','nesterov','adadelta','adagrad','rmsprop']
+#layerList=['Sigmoid','Tanh','Rectifier','ExpLin']
+#runs=len(momentumList)*len(learningRateList)*len(unitList)*len(learningRuleList)*len(layerList)
+#counter=0
+#for learningRule in learningRuleList:
+#    for learningRate in learningRateList:
+#        for momentum in momentumList:
+#            for unit in unitList:
+#                for layer in layerList:
+#                    # set up hidden layers and basic nn classifier
+#                    hidden_layer1 = mlp.Layer(layer, units=unit)
+#                    hidden_layer2 = mlp.Layer('Linear')
+#                    
+#                    signalNN = mlp.Regressor([hidden_layer1, hidden_layer2],random_state=1,
+#                                       learning_rule=learningRule, learning_rate=learningRate,
+#                                       learning_momentum=momentum,n_iter=100)
+#                                       
+#                    signalNN.fit(signalTrainDF[xList].as_matrix(),signalTrainDF[yList].as_matrix())
+#                    
+#                    #Predict New Data
+#                    yPred=signalNN.predict(signalTestDF[xList].as_matrix())
+#
+#                    #Get accuracy
+#                    nnAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+#                    nnParamList.append([learningRule,float(learningRate),float(momentum),unit,layer,nnAccuracy])
+#                    counter=counter+1
+#                    print(str(100*float(counter)/float(runs))+'% Complete' )
+#
+##Review effect on more units with adaDelta and Tanh
+#momentumList=[ n/10 for n in list(range(1,10,2))] 
+#learningRateList=[ n/1000 for n in list(range(5,51,5))]
+#unitList=[200,225,250,300]
+#learningRuleList=['adadelta']
+#layerList=['Tanh']
+#runs=len(momentumList)*len(learningRateList)*len(unitList)*len(learningRuleList)*len(layerList)
+#counter=0
+#for learningRule in learningRuleList:
+#    for learningRate in learningRateList:
+#        for momentum in momentumList:
+#            for unit in unitList:
+#                for layer in layerList:
+#                    # set up hidden layers and basic nn classifier
+#                    hidden_layer1 = mlp.Layer(layer, units=unit)
+#                    hidden_layer2 = mlp.Layer('Linear')
+#                    
+#                    signalNN = mlp.Regressor([hidden_layer1, hidden_layer2],random_state=1,
+#                                       learning_rule=learningRule, learning_rate=learningRate,
+#                                       learning_momentum=momentum,n_iter=100)
+#                                       
+#                    signalNN.fit(signalTrainDF[xList].as_matrix(),signalTrainDF[yList].as_matrix())
+#                    
+#                    #Predict New Data
+#                    yPred=signalNN.predict(signalTestDF[xList].as_matrix())
+#
+#                    #Get accuracy
+#                    nnAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+#                    nnParamList.append([learningRule,float(learningRate),float(momentum),unit,layer,nnAccuracy])
+#                    counter=counter+1
+#                    print(str(100*float(counter)/float(runs))+'% Complete' )
+#
+#nnParamDF=pd.DataFrame(nnParamList,columns=['learningRule','learningRate','momentum','unit','layer','accuracy'])                    
+#
+#nnParamDF.to_csv('../DSI_Religion/variableAnalysis/nnOptimization.csv')
+
+endTime=time.time()
+print('runtime (in seconds):' +str(int(endTime-startTime)))
+#runtime (in seconds):829
