@@ -1,0 +1,7 @@
+*.csv
+.DS_Store
+*.pyc
+.Rapp.history
+.RData
+.Rhistory
+pynb_checkpoints/*
