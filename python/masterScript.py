@@ -14,6 +14,7 @@ import nltk
 import time
 sys.path.append('./python/')
 import semanticDensity as sd
+import syntacticParsing as sp
 stemmer = nltk.stem.snowball.EnglishStemmer()
 
 
@@ -39,6 +40,11 @@ for groupId in groupList:
 #Loop through each group and create sub bins
 groupSize=10
 testSplit=0.1
+targetWordCount=10
+cocoWindow=6
+svdInt=50
+cvWindow=6
+simCount=1000
 fileList=[]
 for groupId in groupList:
     subGroup=[x for x in rawFileList if groupId == x[0]]
@@ -61,12 +67,15 @@ os.makedirs(runDirectory)
 #Print file splits to runDirectory
 fileDF.to_csv(runDirectory+'/fileSplits,csv')
 
+
 timeIn=time.time()
 ################################
 #####Perform group analysis#####
 ################################
 
 for groupId in subgroupList:
+#    print('testing')
+#groupId=subgroupList[0]
     #Create sub directory
     folderPath=runDirectory+'/'+groupId[0]+'/'+groupId[1]
     os.makedirs(folderPath)
@@ -76,29 +85,38 @@ for groupId in subgroupList:
     
     tokenList = sd.tokenize(subFileList)
     
+    ########################################
+    ###POS Tagging and Judgement Analysis###
+    ########################################
+    
+    judgementList=[sp.judgements(sp.readText(fileName)) for fileName in subFileList]
+    pd.DataFrame(judgementList,columns=['judgementCount','judgementFrac']).mean().to_csv(folderPath+'/judgements.csv')
+    
+    txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
+    wordList=sp.targetWords(txtString,targetWordCount)
+    
     #######################            
     ###Semantic analysis###
     #######################
     
     #Get word coCo
-    CoCo, TF, docTF = sd.coOccurence(tokenList,6)
+    CoCo, TF, docTF = sd.coOccurence(tokenList,cocoWindow)
     
     #Get DSM
-    DSM=sd.DSM(CoCo,50)
+    DSM=sd.DSM(CoCo,svdInt)
     
     
     #Get context vectors
     #Bring in wordlist
-    wordList=['god','love','hate']
+    
     wordList=[stemmer.stem(word) for word in wordList]
-    CVDict=sd.contextVectors(tokenList, DSM, wordList, 6)
+    CVDict=sd.contextVectors(tokenList, DSM, wordList, cvWindow)
     
     #Run cosine sim
-    cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,1000)
+    cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,simCount)
     pd.DataFrame(cosineSimilarity).to_csv(folderPath+'/contextVectors.csv')
-
-timeOut=time.time()
+    
+    timeOut=time.time()
 
 estimatedRunTime=(timeOut-timeIn)
-
 
