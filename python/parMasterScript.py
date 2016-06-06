@@ -12,13 +12,69 @@ import pandas as pd
 import numpy as np
 import nltk
 import time
-import pickle
+import multiprocessing as mp
+from joblib import Parallel, delayed
 sys.path.append('./python/')
 import semanticDensity as sd
 import syntacticParsing as sp
 import sentimentAnalysis as sa
+
+
 stemmer = nltk.stem.snowball.EnglishStemmer()
 
+##########################
+#####Define Functions#####
+##########################
+def textAnalysis(paramList):
+    groupId=paramList[0]
+    fileList=paramList[1]
+    targetWordCount=paramList[2]
+    cocoWindow=paramList[3]
+    svdInt=paramList[4]
+    cvWindow=paramList[5]
+    simCount=paramList[6]
+    #Get list of subfiles
+    subFileList=[x[1] for x in fileList if x[0]==groupId[0] and x[2]==groupId[1]]
+    
+    tokenList = sd.tokenize(subFileList)
+    
+    ########################
+    ###Sentiment Analysis###
+    ########################
+    sentimentList=sa.sentimentLookup(tokenList)
+    
+    ########################################
+    ###POS Tagging and Judgement Analysis###
+    ########################################
+    
+    judgementList=[sp.judgements(sp.readText(fileName)) for fileName in subFileList]
+    judgementAvg=list(np.mean(np.array(judgementList),axis=0))
+    
+    txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
+    wordList=sp.targetWords(txtString,targetWordCount)
+    
+    #######################            
+    ###Semantic analysis###
+    #######################
+    
+    #Get word coCo
+    CoCo, TF, docTF = sd.coOccurence(tokenList,cocoWindow)
+    
+    #Get DSM
+    DSM=sd.DSM(CoCo,svdInt)
+    
+    #Get context vectors
+    #Bring in wordlist
+    
+    wordList=[stemmer.stem(word) for word in wordList]
+    CVDict=sd.contextVectors(tokenList, DSM, wordList, cvWindow)
+    
+    #Run cosine sim
+    cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,simCount)
+    avgSD=np.mean([x[1] for x in cosineSimilarity])
+    
+    #Append outputs to masterOutput
+    return(['_'.join(groupId)]+sentimentList+judgementAvg+[avgSD])
 
 ###############################
 #####Raw File List Extract#####
@@ -70,70 +126,22 @@ os.makedirs(runDirectory)
 fileDF.to_csv(runDirectory+'/fileSplits,csv')
 
 
-timeIn=time.time()
 ################################
 #####Perform group analysis#####
 ################################
-masterOutput=[]
-for groupId in subgroupList:
-#    print('testing')
-#groupId=subgroupList[0]
-    #Create sub directory
-    #folderPath=runDirectory+'/'+groupId[0]+'/'+groupId[1]
-    #os.makedirs(folderPath)
-    
-    #Get list of subfiles
-    subFileList=[x[1] for x in fileList if x[0]==groupId[0] and x[2]==groupId[1]]
-    
-    tokenList = sd.tokenize(subFileList)
-    
-    ########################
-    ###Sentiment Analysis###
-    ########################
-    sentimentList=sa.sentimentLookup(tokenList)
-    #pd.DataFrame(sentimentList,columns=['perPos','perNeg','perPosDoc','perNegDoc']).to_csv(folderPath+'/sentiment.csv')
-    
-    ########################################
-    ###POS Tagging and Judgement Analysis###
-    ########################################
-    
-    judgementList=[sp.judgements(sp.readText(fileName)) for fileName in subFileList]
-    judgementAvg=list(np.mean(np.array(judgementList),axis=0))
-    #pd.DataFrame(judgementList,columns=['judgementCount','judgementFrac']).mean().to_csv(folderPath+'/judgements.csv')
-    
-    txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
-    wordList=sp.targetWords(txtString,targetWordCount)
-    
-    #######################            
-    ###Semantic analysis###
-    #######################
-    
-    #Get word coCo
-    CoCo, TF, docTF = sd.coOccurence(tokenList,cocoWindow)
-    
-    #Get DSM
-    DSM=sd.DSM(CoCo,svdInt)
-    #pickle.dump(DSM,open(folderPath+'/testDSM.pickle', 'wb') )
-    
-    
-    #Get context vectors
-    #Bring in wordlist
-    
-    wordList=[stemmer.stem(word) for word in wordList]
-    CVDict=sd.contextVectors(tokenList, DSM, wordList, cvWindow)
-    
-    #Run cosine sim
-    cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,simCount)
-    avgSD=np.mean([x[1] for x in cosineSimilarity])
-    #pd.DataFrame(cosineSimilarity).to_csv(folderPath+'/contextVectors.csv')
-    
-    #Append outputs to masterOutput
-    masterOutput.append(['_'.join(groupId)]+sentimentList+judgementAvg+[avgSD])
+
+#Create paramList
+paramList=[[groupId,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount] for groupId in subgroupList]
+
+#Parallelize calulation
+timeIn=time.time()
+masterOutput=Parallel(n_jobs=mp.cpu_count()-1)(delayed(textAnalysis)(x) for x in paramList)  
+
 
 #Create output file
 outputDF=pd.DataFrame(masterOutput,columns=['groupId','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD'])
 outputDF.to_csv(runDirectory+'/masterOutput.csv')
-timeOut=time.time()
 
-estimatedRunTime=(timeOut-timeIn)
+
+
 
