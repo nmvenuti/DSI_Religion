@@ -13,7 +13,7 @@ import numpy as np
 import nltk
 import time
 import multiprocessing as mp
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 sys.path.append('./python/')
 import semanticDensity as sd
 import syntacticParsing as sp
@@ -145,9 +145,8 @@ if __name__ == '__main__':
     svdInt=50
     cvWindow=6
     simCount=1000
-    nCores=mp.cpu_count() #39 minutes
-#    nCores=1
-#    
+    nCores=mp.cpu_count()
+
     
     startTime=time.time()
     runMaster(rawPath,groupList,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount,nCores)
