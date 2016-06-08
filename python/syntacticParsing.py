@@ -13,7 +13,11 @@ import string
 import pandas as pd
 
 #Set up inital parameters
-tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+try:
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+except:
+    nltk.download('punkt')
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 nounList=['NN','NNS','NNP','NNPS']
 adjList=['JJ','JJR','JJS']
 toBeList=["is","was","am","are","were","been","be","being"]
@@ -72,10 +76,12 @@ def targetWords(txtString,wordCount):
     for tag in tagList:
         if tag[1] in tagFilterList:
             word=str.lower(''.join([c for c in tag[0] if c not in string.punctuation]))
-            try:
-                targetDict[word]=targetDict[word]+1
-            except:
-                targetDict[word]=1
+            #Filter out codecerrors
+            if word != 'codecerror':
+                try:
+                    targetDict[word]=targetDict[word]+1
+                except:
+                    targetDict[word]=1
     targetDF=pd.DataFrame([[k,v] for k,v in targetDict.items()],columns=['word','count'])
     targetDF.sort(['count'],inplace=True,ascending=False)
     sortedTargetList=list(targetDF['word'])[:wordCount]

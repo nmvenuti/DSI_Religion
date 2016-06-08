@@ -22,7 +22,6 @@ negWords=list(set(sentDict[negFilePath]))
 
 #Define packages
 
-tokens=sd.tokenize(['./data_dsicap/DorothyDay/raw/2.html.txt','./data_dsicap/DorothyDay/raw/3.html.txt'])
 def sentimentLookup(tokens):
     fileSentiment=[]
     #Get sentiment for each document

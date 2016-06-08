@@ -4,20 +4,20 @@ Created on Thu Jun  2 15:23:11 2016
 
 @author: nmvenuti
 """
-
-import gc, sys, os
-os.chdir('./github/nmvenuti/DSI_Religion/')
+import pip
+import sys, os
+#os.chdir('./github/nmvenuti/DSI_Religion/')
 import os.path
-import pandas as pd
 import numpy as np
-import nltk
 import time
 import multiprocessing as mp
 #from joblib import Parallel, delayed
 sys.path.append('./python/')
+import nltk
 import semanticDensity as sd
 import syntacticParsing as sp
 import sentimentAnalysis as sa
+
 
 
 stemmer = nltk.stem.snowball.EnglishStemmer()
@@ -133,6 +133,7 @@ def runMaster(rawPath,groupList,groupSize,testSplit,targetWordCount,cocoWindow,s
     #Create output file
     outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD'])
     outputDF.to_csv(runDirectory+'/masterOutput.csv')
+    
 
 
 
@@ -148,7 +149,7 @@ if __name__ == '__main__':
     svdInt=50
     cvWindow=6
     simCount=1000
-    nCores=mp.cpu_count()
+    nCores=int(os.environ['SLURM_CPUS_PER_TASK'])
     
     startTime=time.time()
     runMaster(rawPath,groupList,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount,nCores)

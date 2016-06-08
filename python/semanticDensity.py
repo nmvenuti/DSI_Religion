@@ -22,7 +22,12 @@ import math
 ###################################
 
 #Set function parameters for package
-tokenizer = nltk.tokenize.treebank.TreebankWordTokenizer()
+#tokenizer = nltk.tokenize.treebank.TreebankWordTokenizer()
+try:
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+except:
+    nltk.download('punkt')
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 stemmer = nltk.stem.snowball.EnglishStemmer()
 punctuation = set(string.punctuation)
 stopWords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',

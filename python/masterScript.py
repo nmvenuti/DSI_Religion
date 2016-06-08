@@ -6,7 +6,7 @@ Created on Thu Jun  2 15:23:11 2016
 """
 
 import gc, sys, os
-os.chdir('../DSI_Religion/')
+os.chdir('./github/nmvenuti/DSI_Religion/')
 import os.path
 import pandas as pd
 import numpy as np
