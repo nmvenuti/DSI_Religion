@@ -67,6 +67,9 @@ def tokenize(fileList):
             #Stem words
             textList=[stemmer.stem(word) for word in textList]
             stemStopwords=[stemmer.stem(word) for word in stopWords]
+            
+            #Remove blanks
+            textList=[word for word in textList if word!= ' ']
              
             #Remove stopwords
 #            stemStopwords.append("")

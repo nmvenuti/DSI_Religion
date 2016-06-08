@@ -12,9 +12,11 @@ import pandas as pd
 import numpy as np
 import nltk
 import time
+import pickle
 sys.path.append('./python/')
 import semanticDensity as sd
 import syntacticParsing as sp
+import sentimentAnalysis as sa
 stemmer = nltk.stem.snowball.EnglishStemmer()
 
 
@@ -72,25 +74,32 @@ timeIn=time.time()
 ################################
 #####Perform group analysis#####
 ################################
-
+masterOutput=[]
 for groupId in subgroupList:
 #    print('testing')
 #groupId=subgroupList[0]
     #Create sub directory
-    folderPath=runDirectory+'/'+groupId[0]+'/'+groupId[1]
-    os.makedirs(folderPath)
+    #folderPath=runDirectory+'/'+groupId[0]+'/'+groupId[1]
+    #os.makedirs(folderPath)
     
     #Get list of subfiles
     subFileList=[x[1] for x in fileList if x[0]==groupId[0] and x[2]==groupId[1]]
     
     tokenList = sd.tokenize(subFileList)
     
+    ########################
+    ###Sentiment Analysis###
+    ########################
+    sentimentList=sa.sentimentLookup(tokenList)
+    #pd.DataFrame(sentimentList,columns=['perPos','perNeg','perPosDoc','perNegDoc']).to_csv(folderPath+'/sentiment.csv')
+    
     ########################################
     ###POS Tagging and Judgement Analysis###
     ########################################
     
     judgementList=[sp.judgements(sp.readText(fileName)) for fileName in subFileList]
-    pd.DataFrame(judgementList,columns=['judgementCount','judgementFrac']).mean().to_csv(folderPath+'/judgements.csv')
+    judgementAvg=list(np.mean(np.array(judgementList),axis=0))
+    #pd.DataFrame(judgementList,columns=['judgementCount','judgementFrac']).mean().to_csv(folderPath+'/judgements.csv')
     
     txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
     wordList=sp.targetWords(txtString,targetWordCount)
@@ -104,6 +113,7 @@ for groupId in subgroupList:
     
     #Get DSM
     DSM=sd.DSM(CoCo,svdInt)
+    #pickle.dump(DSM,open(folderPath+'/testDSM.pickle', 'wb') )
     
     
     #Get context vectors
@@ -114,9 +124,16 @@ for groupId in subgroupList:
     
     #Run cosine sim
     cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,simCount)
-    pd.DataFrame(cosineSimilarity).to_csv(folderPath+'/contextVectors.csv')
+    avgSD=np.mean([x[1] for x in cosineSimilarity])
+    #pd.DataFrame(cosineSimilarity).to_csv(folderPath+'/contextVectors.csv')
     
-    timeOut=time.time()
+    #Append outputs to masterOutput
+    masterOutput.append(['_'.join(groupId)]+sentimentList+judgementAvg+[avgSD])
+
+#Create output file
+outputDF=pd.DataFrame(masterOutput,columns=['groupId','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD'])
+outputDF.to_csv(runDirectory+'/masterOutput.csv')
+timeOut=time.time()
 
 estimatedRunTime=(timeOut-timeIn)
 

@@ -16,9 +16,7 @@ import pandas as pd
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 nounList=['NN','NNS','NNP','NNPS']
 adjList=['JJ','JJR','JJS']
-toBeList=['be', 'am', 'is', 'are', 'was', 'were', 'been', 'has', 
-'have', 'had', 'do', 'did', 'does', 'can', 'could', 'shall', 
-'should', 'will', 'would', 'may', 'might', 'must']
+toBeList=["is","was","am","are","were","been","be","being"]
 tagFilterList=['JJ','JJR','JJS','RB','RBR','RBS','WRB']
 
 
@@ -40,13 +38,30 @@ def judgements(txtString):
     sentList=list(tokenizer.tokenize(txtString))
     for sent in sentList:
         tagList=nltk.pos_tag(nltk.word_tokenize(sent))
-        #Check for noun
-        if len([x for x in tagList if x[1] in nounList])>0:
-            #Check for adj
-            if len([x for x in tagList if x[1] in adjList])>0:
-                #Check for to-be verb
-                if len([x for x in tagList if str.lower(x[0]) in toBeList])>0:
-                    judgementCount=judgementCount+1
+        
+        #Look for combination of noun-adj-to_be verb in order        
+        nounFlag=False
+        adjFlag=False
+
+        for tag in tagList:
+            #Check if noun flag activated
+            if nounFlag:
+                #If noun flag activated check if adj flag activated
+                if adjFlag:
+                    #If adjective flag activated check if word is to-be verb
+                    if tag[0] in toBeList:
+                        #If true, count as judgement, exit loop
+                        judgementCount=judgementCount+1
+                        break
+                #if adj flag not activated check if tag is adjective
+                else:
+                    if tag[1] in adjList:
+                        adjFlag=True
+            #if noun flag not activated check if tag is noun
+            else:
+                if tag[1] in nounList:
+                    nounFlag=True
+
     judgementPercent=float(judgementCount)/len(sentList)
     #Return metrics
     return([judgementCount,judgementPercent])
