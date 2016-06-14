@@ -70,7 +70,7 @@ def judgements(txtString):
     #Return metrics
     return([judgementCount,judgementPercent])
 
-def targetWords(txtString,wordCount):
+def targetWords(txtString,wordCount,startCount=0):
     tagList=nltk.pos_tag(nltk.word_tokenize(txtString))
     targetDict={}
     for tag in tagList:
@@ -84,5 +84,5 @@ def targetWords(txtString,wordCount):
                     targetDict[word]=1
     targetDF=pd.DataFrame([[k,v] for k,v in targetDict.items()],columns=['word','count'])
     targetDF.sort(['count'],inplace=True,ascending=False)
-    sortedTargetList=list(targetDF['word'])[:wordCount]
+    sortedTargetList=list(targetDF['word'])[startCount:wordCount+startCount]
     return(sortedTargetList)

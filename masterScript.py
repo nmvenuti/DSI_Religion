@@ -62,7 +62,7 @@ def textAnalysis(paramList):
     judgementAvg=list(np.mean(np.array(judgementList),axis=0))
     
     txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
-    wordList=sp.targetWords(txtString,targetWordCount)
+    wordList=sp.targetWords(txtString,targetWordCount,25)
     
     #######################            
     ###Semantic analysis###
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     rawPath = './data_dsicap/'
     groupList=['DorothyDay','JohnPiper','MehrBaba','NaumanKhan','PastorAnderson',
                'Rabbinic','Shepherd','Unitarian','WBC']
-    crossValidate=4
+    crossValidate=1
     groupSize=10
     testSplit=0.1
     targetWordCount=10
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     
     startTimeTotal=time.time()
     #Try hyper-parameter optimization on window range from 2 to 6
-    for x in range(5,7):
+    for x in range(2,7):
         cocoWindow=x
         cvWindow=x
         runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)

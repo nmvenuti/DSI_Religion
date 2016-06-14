@@ -8,6 +8,7 @@ import time
 start=time.time()
 import sys, os
 #os.chdir('./github/nmvenuti/DSI_Religion/')
+from joblib import Parallel, delayed
 import os.path
 import numpy as np
 import pandas as pd
@@ -24,8 +25,8 @@ import networkQuantification as nq
 
 end=time.time()
 #sys.stdout = open("output.txt", "a")
-##print(str(datetime.now()))
-##print('finished loading packages after '+str(end-start)+' seconds')
+print(str(datetime.now()))
+print('finished loading packages after '+str(end-start)+' seconds')
 sys.stdout.flush()
 
 
@@ -90,7 +91,7 @@ def textAnalysis(paramList):
     
     endTime=time.time()
     timeRun=endTime-startTime
-    #print('finished running'+'_'.join(groupId)+' in '+str(end-start)+' seconds')
+    print('finished running'+'_'.join(groupId)+' in '+str(end-start)+' seconds')
     sys.stdout.flush()
     #Append outputs to masterOutput
     return(['_'.join(groupId)]+[len(subFileList),timeRun]+sentimentList+judgementAvg+[avgSD]+[avgEVC])   
@@ -110,10 +111,10 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
     #Make output directory
 #    runDirectory='./pythonOutput/'+ time.strftime("%c")
 #    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+time.strftime("%c").replace(' ','_')
-    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+'_cvwindow_'+str(cvWindow)
+    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)
     os.makedirs(runDirectory)
     end=time.time()
-    #print('finished loading packages after '+str(end-start)+' seconds')
+    print('finished loading packages after '+str(end-start)+' seconds')
     sys.stdout.flush()
     
     
@@ -143,11 +144,11 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         outputDirectory=runDirectory+'/run'+str(fold)
         os.makedirs(outputDirectory)
         
-        ##print file splits to runDirectory
+        #Print file splits to runDirectory
         fileDF.to_csv(outputDirectory+'/fileSplits.csv')
 
         end=time.time()
-        #print('finished randomly creating subgroups '+str(end-start)+' seconds')
+        print('finished randomly creating subgroups '+str(end-start)+' seconds')
         sys.stdout.flush()        
         
         ################################
@@ -158,7 +159,8 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount] for x in subgroupList]
         
         #Run calculation
-        masterOutput=[textAnalysis(x) for x in paramList]  
+#        masterOutput=[textAnalysis(x) for x in paramList]  
+        masterOutput=Parallel(n_jobs=2)(delayed(textAnalysis)(x) for x in paramList)  
         #Create output file
         outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
         outputDF.to_csv(outputDirectory+'/masterOutput.csv')
@@ -173,7 +175,7 @@ if __name__ == '__main__':
     rawPath = './data_dsicap/'
     groupList=['DorothyDay','JohnPiper','MehrBaba','NaumanKhan','PastorAnderson',
                'Rabbinic','Shepherd','Unitarian','WBC']
-    crossValidate=1
+    crossValidate=4
     groupSize=10
     testSplit=0.1
     targetWordCount=10
@@ -185,10 +187,11 @@ if __name__ == '__main__':
     
     
     startTimeTotal=time.time()
-    #Try hyper-parameter optimization on window range from 5 to 15
-    for cocoWindow in range(4,5):
-        for cvWindow in range(4,5):
-            runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)
+    #Try hyper-parameter optimization on window range from 2 to 6
+    for x in range(5,7):
+        cocoWindow=x
+        cvWindow=x
+        runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')
     sys.stdout.flush()

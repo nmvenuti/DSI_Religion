@@ -23,7 +23,7 @@ import sentimentAnalysis as sa
 import networkQuantification as nq
 
 end=time.time()
-#sys.stdout = open("output.txt", "a")
+sys.stdout = open("output.txt", "a")
 print(str(datetime.now()))
 print('finished loading packages after '+str(end-start)+' seconds')
 sys.stdout.flush()
@@ -52,42 +52,58 @@ def textAnalysis(paramList):
     ###Sentiment Analysis###
     ########################
     sentimentList=sa.sentimentLookup(tokenList)
-    
+    print('finished sentiment'+'_'.join(groupId))
+    sys.stdout.flush()    
     ########################################
     ###POS Tagging and Judgement Analysis###
     ########################################
     
     judgementList=[sp.judgements(sp.readText(fileName)) for fileName in subFileList]
     judgementAvg=list(np.mean(np.array(judgementList),axis=0))
-    
+    print('finished judgement'+'_'.join(groupId))
+
+    sys.stdout.flush()      
     txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
     wordList=sp.targetWords(txtString,targetWordCount)
-    
+
+    print('finished target words'+'_'.join(groupId))
+    sys.stdout.flush()    
     #######################            
     ###Semantic analysis###
     #######################
     
     #Get word coCo
     CoCo, TF, docTF = sd.coOccurence(tokenList,cocoWindow)
-    
+    print('finished coco'+'_'.join(groupId))
+    sys.stdout.flush()
+      
     #Get DSM
     DSM=sd.DSM(CoCo,svdInt)
+    print('finished coco'+'_'.join(groupId))
+    sys.stdout.flush() 
     
     #Get context vectors
     #Bring in wordlist
     
     wordList=[stemmer.stem(word) for word in wordList]
     CVDict=sd.contextVectors(tokenList, DSM, wordList, cvWindow)
-    
+
+    print('finished coco'+'_'.join(groupId))
+    sys.stdout.flush()
+     
     #Run cosine sim
     cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,simCount)
     avgSD=np.mean([x[1] for x in cosineSimilarity])
+    print('finished Semantic density'+'_'.join(groupId))
+    sys.stdout.flush() 
     
     ############################
     ###Network Quantification###
     ############################
     avgEVC=nq.getNetworkQuant(DSM,wordList)
-    
+    print('finished network quant'+'_'.join(groupId))
+    sys.stdout.flush() 
+   
     endTime=time.time()
     timeRun=endTime-startTime
     print('finished running'+'_'.join(groupId)+' in '+str(end-start)+' seconds')
@@ -113,7 +129,7 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
     runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+'_cvwindow_'+str(cvWindow)
     os.makedirs(runDirectory)
     end=time.time()
-    print('finished loading packages after '+str(end-start)+' seconds')
+    #print('finished loading packages after '+str(end-start)+' seconds')
     sys.stdout.flush()
     
     
@@ -143,11 +159,11 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         outputDirectory=runDirectory+'/run'+str(fold)
         os.makedirs(outputDirectory)
         
-        #Print file splits to runDirectory
+        ##print file splits to runDirectory
         fileDF.to_csv(outputDirectory+'/fileSplits.csv')
 
         end=time.time()
-        print('finished randomly creating subgroups '+str(end-start)+' seconds')
+        #print('finished randomly creating subgroups '+str(end-start)+' seconds')
         sys.stdout.flush()        
         
         ################################
@@ -158,7 +174,11 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount] for x in subgroupList]
         
         #Run calculation
-        masterOutput=[textAnalysis(x) for x in paramList]  
+    	print('begin text analysis')
+    	sys.stdout.flush()
+        masterOutput=[textAnalysis(x) for x in paramList]
+    	print('completed text analysis')
+    	sys.stdout.flush()  
         #Create output file
         outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
         outputDF.to_csv(outputDirectory+'/masterOutput.csv')
@@ -173,7 +193,7 @@ if __name__ == '__main__':
     rawPath = './data_dsicap/'
     groupList=['DorothyDay','JohnPiper','MehrBaba','NaumanKhan','PastorAnderson',
                'Rabbinic','Shepherd','Unitarian','WBC']
-    crossValidate=3
+    crossValidate=1
     groupSize=10
     testSplit=0.1
     targetWordCount=10
@@ -186,8 +206,8 @@ if __name__ == '__main__':
     
     startTimeTotal=time.time()
     #Try hyper-parameter optimization on window range from 5 to 15
-    for cocoWindow in range(2,7):
-        for cvWindow in range(2,7):
+    for cocoWindow in range(4,5):
+        for cvWindow in range(4,5):
             runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')
