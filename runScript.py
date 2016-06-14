@@ -53,7 +53,8 @@ def textAnalysis(paramList):
     ########################
     sentimentList=sa.sentimentLookup(tokenList)
     print('finished sentiment'+'_'.join(groupId))
-    sys.stdout.flush()    
+    sys.stdout.flush()
+    
     ########################################
     ###POS Tagging and Judgement Analysis###
     ########################################

@@ -13,11 +13,12 @@ import string
 import pandas as pd
 
 #Set up inital parameters
-try:
-    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-except:
-    nltk.download('punkt')
-    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+#try:
+#    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+#except:
+#    nltk.download('punkt')
+#    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 nounList=['NN','NNS','NNP','NNPS']
 adjList=['JJ','JJR','JJS']
 toBeList=["is","was","am","are","were","been","be","being"]

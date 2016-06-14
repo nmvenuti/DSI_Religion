@@ -26,7 +26,7 @@ startTime=time.time()
 ################################
 
 #Define data filepath
-dataPath='./github/nmvenuti/DSI_Religion/variableAnalysis/Second Run-Cuts/'
+dataPath='./github/nmvenuti/DSI_Religion/variableAnalysis/Third Run-Cuts/'
 
 
 #Get data frame for each cut
@@ -190,9 +190,9 @@ def modelAnalysis(signalDF,cutoff):
                 
 
 accuracyList=[]
-accuracyList.append([2]+modelAnalysis(signalDF2,0.5))
-accuracyList.append([3]+modelAnalysis(signalDF3,0.5))
-accuracyList.append([4]+modelAnalysis(signalDF4,0.5))
-accuracyList.append([5]+modelAnalysis(signalDF5,0.5))
-accuracyList.append([6]+modelAnalysis(signalDF6,0.5))
-pd.DataFrame(accuracyList).to_csv('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/testOutput2.csv')
+accuracyList.append([2]+modelAnalysis(signalDF2,1))
+accuracyList.append([3]+modelAnalysis(signalDF3,1))
+accuracyList.append([4]+modelAnalysis(signalDF4,1))
+accuracyList.append([5]+modelAnalysis(signalDF5,1))
+accuracyList.append([6]+modelAnalysis(signalDF6,1))
+pd.DataFrame(accuracyList).to_csv('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/testOutput1.csv')

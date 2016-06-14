@@ -21,7 +21,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 ################################
 
 #Define data filepath
-dataPath='./github/nmvenuti/DSI_Religion/variableAnalysis/Second Run-Cuts/'
+dataPath='./github/nmvenuti/DSI_Religion/variableAnalysis/Third Run-Cuts/'
 
 
 #Get data frame for each cut
