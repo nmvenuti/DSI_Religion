@@ -8,7 +8,8 @@ import time
 start=time.time()
 import sys, os
 #os.chdir('./github/nmvenuti/DSI_Religion/')
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
+import multiprocessing as mp
 import os.path
 import numpy as np
 import pandas as pd
@@ -24,7 +25,7 @@ import sentimentAnalysis as sa
 import networkQuantification as nq
 
 end=time.time()
-#sys.stdout = open("output.txt", "a")
+sys.stdout = open("output.txt", "a")
 print(str(datetime.now()))
 print('finished loading packages after '+str(end-start)+' seconds')
 sys.stdout.flush()
@@ -44,6 +45,9 @@ def textAnalysis(paramList):
     svdInt=paramList[4]
     cvWindow=paramList[5]
     simCount=paramList[6]
+    startCount=paramList[7]
+    netAngle=paramList[8]    
+    
     #Get list of subfiles
     subFileList=[x[1] for x in fileList if x[0]==groupId[0] and x[2]==groupId[1]]
     
@@ -62,7 +66,7 @@ def textAnalysis(paramList):
     judgementAvg=list(np.mean(np.array(judgementList),axis=0))
     
     txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
-    wordList=sp.targetWords(txtString,targetWordCount,25)
+    wordList=sp.targetWords(txtString,targetWordCount,startCount)
     
     #######################            
     ###Semantic analysis###
@@ -87,7 +91,7 @@ def textAnalysis(paramList):
     ############################
     ###Network Quantification###
     ############################
-    avgEVC=nq.getNetworkQuant(DSM,wordList)
+    avgEVC=nq.getNetworkQuant(DSM,wordList,netAngle)
     
     endTime=time.time()
     timeRun=endTime-startTime
@@ -96,7 +100,7 @@ def textAnalysis(paramList):
     #Append outputs to masterOutput
     return(['_'.join(groupId)]+[len(subFileList),timeRun]+sentimentList+judgementAvg+[avgSD]+[avgEVC])   
 
-def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount):
+def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores):
     ###############################
     #####Raw File List Extract#####
     ###############################
@@ -111,7 +115,7 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
     #Make output directory
 #    runDirectory='./pythonOutput/'+ time.strftime("%c")
 #    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+time.strftime("%c").replace(' ','_')
-    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)
+    runDirectory='./pythonOutput/coco_'+str(cocoWindow)+'_cv_'+str(cvWindow)+'_netAng_'+str(netAngle)+'_sc_'+str(startCount)
     os.makedirs(runDirectory)
     end=time.time()
     print('finished loading packages after '+str(end-start)+' seconds')
@@ -156,11 +160,14 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         ################################
         
         #Create paramList
-        paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount] for x in subgroupList]
+        paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount,startCount,netAngle] for x in subgroupList]
         
         #Run calculation
-#        masterOutput=[textAnalysis(x) for x in paramList]  
-        masterOutput=Parallel(n_jobs=2)(delayed(textAnalysis)(x) for x in paramList)  
+        xPool=mp.Pool(processes=nCores)    
+        outputList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
+        masterOutput=[p.get() for p in outputList]    
+        masterOutput=[textAnalysis(x) for x in paramList]  
+#        masterOutput=Parallel(n_jobs=2)(delayed(textAnalysis)(x) for x in paramList)  
         #Create output file
         outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
         outputDF.to_csv(outputDirectory+'/masterOutput.csv')
@@ -183,15 +190,24 @@ if __name__ == '__main__':
     svdInt=50
 #    cvWindow=6
     simCount=1000
+    coreString=os.environ['SLURM_JOB_CPUS_PER_NODE']
+    coreString=''.join([c if c.isdigit() else ' ' for c in coreString])
+#    nCores=reduce(lambda x, y: x*y,[int(x) for x in coreString.split() if x.isdigit()])
+    nCores=int(coreString[0])
     
     
     
     startTimeTotal=time.time()
     #Try hyper-parameter optimization on window range from 2 to 6
-    for x in range(2,7):
-        cocoWindow=x
-        cvWindow=x
-        runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)
+    for cocoWindow in range(2,4):
+        for cvWindow in range(2,3):
+            for startCount in range(0,6,5):
+                for netAngle in range(0,31,15):
+                    runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores)
+    
+    xPool=mp.Pool(processes=nCores)    
+    runList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
+    masterOutput=[p.get() for p in outputList]        
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')
     sys.stdout.flush()

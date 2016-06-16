@@ -239,6 +239,7 @@ if __name__ == '__main__':
     #Try hyper-parameter optimization on window range from 5 to 15
     for cocoWindow in range(4,5):
         for cvWindow in range(4,5):
+            
             runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')

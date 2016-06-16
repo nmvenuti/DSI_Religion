@@ -7,7 +7,7 @@ import scipy.spatial.distance as ssd
 import math
 
 #Define functions
-def getNetworkQuant(dsm,targetWords):
+def getNetworkQuant(dsm,targetWords,netAngle):
     
     #Get list of values in DSM
     dsmList=[x.values() for x in dsm.values()]
@@ -18,9 +18,9 @@ def getNetworkQuant(dsm,targetWords):
     adj = cosineNP.copy()
     
     #Apply thresholds
-    adj[np.abs(cosineNP) >= math.cos(math.radians(30))] = 0 # Converting 30 degree threshold to radians to a cosine value
+    adj[np.abs(cosineNP) >= math.cos(math.radians(netAngle))] = 0 # Converting 30 degree threshold to radians to a cosine value
     
-    adj[np.abs(cosineNP) < math.cos(math.radians(30))] = 1 # Converting 30 degree threshold to radians to a cosine value
+    adj[np.abs(cosineNP) < math.cos(math.radians(netAngle))] = 1 # Converting 30 degree threshold to radians to a cosine value
     
     adjList = pd.DataFrame(adj,columns=dsm.keys(),index=dsm.keys()).values.tolist()
     
