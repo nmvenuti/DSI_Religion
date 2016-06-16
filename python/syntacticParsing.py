@@ -11,9 +11,12 @@ import nltk
 import nltk.data
 import string
 import pandas as pd
+from nltk.tag.perceptron import PerceptronTagger
+tagger = PerceptronTagger()
 
 #Set up inital parameters
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+
 #try:
 #    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 #except:
@@ -42,7 +45,7 @@ def judgements(txtString):
     judgementCount=0
     sentList=list(tokenizer.tokenize(txtString))
     for sent in sentList:
-        tagList=nltk.pos_tag(nltk.word_tokenize(sent))
+        tagList=tagger.tag(nltk.word_tokenize(sent))
         
         #Look for combination of noun-adj-to_be verb in order        
         nounFlag=False
@@ -72,7 +75,7 @@ def judgements(txtString):
     return([judgementCount,judgementPercent])
 
 def targetWords(txtString,wordCount,startCount=0):
-    tagList=nltk.pos_tag(nltk.word_tokenize(txtString))
+    tagList=tagger.tag(nltk.word_tokenize(txtString))
     targetDict={}
     for tag in tagList:
         if tag[1] in tagFilterList:
@@ -87,3 +90,9 @@ def targetWords(txtString,wordCount,startCount=0):
     targetDF.sort(['count'],inplace=True,ascending=False)
     sortedTargetList=list(targetDF['word'])[startCount:wordCount+startCount]
     return(sortedTargetList)
+
+#Test
+#rawTextfile='./github/nmvenuti/DSI_Religion/data_dsicap/DorothyDay/raw/2.html.txt'
+#rawText=readText(rawTextfile)
+#sentList=list(tokenizer.tokenize(rawText))
+#judge=judgements(rawText)

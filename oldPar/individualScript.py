@@ -8,8 +8,6 @@ import time
 start=time.time()
 import sys, os
 #os.chdir('./github/nmvenuti/DSI_Religion/')
-#from joblib import Parallel, delayed
-import multiprocessing as mp
 import os.path
 import numpy as np
 import pandas as pd
@@ -23,6 +21,7 @@ import semanticDensity as sd
 import syntacticParsing as sp
 import sentimentAnalysis as sa
 import networkQuantification as nq
+stemmer = nltk.stem.snowball.EnglishStemmer()
 
 end=time.time()
 sys.stdout = open("output.txt", "a")
@@ -31,7 +30,7 @@ print('finished loading packages after '+str(end-start)+' seconds')
 sys.stdout.flush()
 
 
-stemmer = nltk.stem.snowball.EnglishStemmer()
+
 
 ##########################
 #####Define Functions#####
@@ -45,9 +44,6 @@ def textAnalysis(paramList):
     svdInt=paramList[4]
     cvWindow=paramList[5]
     simCount=paramList[6]
-    startCount=paramList[7]
-    netAngle=paramList[8]    
-    
     #Get list of subfiles
     subFileList=[x[1] for x in fileList if x[0]==groupId[0] and x[2]==groupId[1]]
     
@@ -56,69 +52,110 @@ def textAnalysis(paramList):
     ########################
     ###Sentiment Analysis###
     ########################
+    start=time.time()
     sentimentList=sa.sentimentLookup(tokenList)
+    end=time.time()
+    print(end-start)
+    print('finished sentiment'+'_'.join(groupId))
+    sys.stdout.flush()
     
     ########################################
     ###POS Tagging and Judgement Analysis###
     ########################################
-    
+    start=time.time()
     judgementList=[sp.judgements(sp.readText(fileName)) for fileName in subFileList]
     judgementAvg=list(np.mean(np.array(judgementList),axis=0))
-    
+    end=time.time()
+    print(end-start)
+    print('finished judgement'+'_'.join(groupId))
+    sys.stdout.flush()
+
+    start=time.time()      
     txtString=' '.join([sp.readText(fileName) for fileName in subFileList])
-    wordList=sp.targetWords(txtString,targetWordCount,startCount)
-    
+    wordList=sp.targetWords(txtString,targetWordCount)
+
+    end=time.time()
+    print(end-start)
+    print('finished target words'+'_'.join(groupId))
+    sys.stdout.flush()
     #######################            
     ###Semantic analysis###
     #######################
     
     #Get word coCo
+    start=time.time()
     CoCo, TF, docTF = sd.coOccurence(tokenList,cocoWindow)
-    
+    end=time.time()
+    print(end-start)
+    print('finished coco'+'_'.join(groupId))
+    sys.stdout.flush()
+      
     #Get DSM
+    start=time.time()
     DSM=sd.DSM(CoCo,svdInt)
+    end=time.time()
+    print(end-start)
+    print('finished DSM'+'_'.join(groupId))
+    sys.stdout.flush()
     
     #Get context vectors
     #Bring in wordlist
     
+    start=time.time()
     wordList=[stemmer.stem(word) for word in wordList]
     CVDict=sd.contextVectors(tokenList, DSM, wordList, cvWindow)
-    
+
+    end=time.time()
+    print(end-start)
+    print('finished cv'+'_'.join(groupId))
+    sys.stdout.flush()
+     
     #Run cosine sim
+    start=time.time()
     cosineSimilarity=sd.averageCosine(CVDict,subFileList,wordList,simCount)
     avgSD=np.mean([x[1] for x in cosineSimilarity])
+    end=time.time()
+    print(end-start)
+    print('finished semantic density'+'_'.join(groupId))
+    sys.stdout.flush()
     
     ############################
     ###Network Quantification###
     ############################
-    avgEVC=nq.getNetworkQuant(DSM,wordList,netAngle)
-    
+    start=time.time()
+    avgEVC=nq.getNetworkQuant(DSM,wordList)
+    end=time.time()
+    print(end-start)
+    print('finished networks'+'_'.join(groupId))
+    sys.stdout.flush()
+   
     endTime=time.time()
     timeRun=endTime-startTime
-    print('finished running'+'_'.join(groupId)+' in '+str(end-start)+' seconds')
+    print('finished running'+'_'.join(groupId)+' in '+str(endTime-startTime)+' seconds')
     sys.stdout.flush()
     #Append outputs to masterOutput
     return(['_'.join(groupId)]+[len(subFileList),timeRun]+sentimentList+judgementAvg+[avgSD]+[avgEVC])   
 
-def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores):
+def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount):
     ###############################
     #####Raw File List Extract#####
     ###############################
-
+    
     rawFileList=[]
     for groupId in groupList:
         for dirpath, dirnames, filenames in os.walk(rawPath+groupId+'/raw'):
             for filename in [f for f in filenames ]:
                 if '.txt' in filename:
                     rawFileList.append([groupId,os.path.join(dirpath, filename)])
-
+    
     #Make output directory
-#    runDirectory='./pythonOutput/'+ time.strftime("%c")
-#    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+time.strftime("%c").replace(' ','_')
-    runDirectory='./pythonOutput/coco_'+str(cocoWindow)+'_cv_'+str(cvWindow)+'_netAng_'+str(netAngle)+'_sc_'+str(startCount)
+    #    runDirectory='./pythonOutput/'+ time.strftime("%c")
+    #    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+time.strftime("%c").replace(' ','_')
+    start=time.time()
+    runDirectory='./pythonOutput/cocowindow_'+str(cocoWindow)+'_cvwindow_'+str(cvWindow)
     os.makedirs(runDirectory)
     end=time.time()
-    print('finished loading packages after '+str(end-start)+' seconds')
+    print('finished making directory '+str(end-start)+' seconds')
     sys.stdout.flush()
     
     
@@ -127,8 +164,9 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         ###############################                
         #####Set up random binning#####
         ###############################
-                        
+        
         #Loop through each group and create sub bins
+        start=time.time()
         fileList=[]
         for groupId in groupList:
             subGroup=[x for x in rawFileList if groupId == x[0]]
@@ -148,29 +186,33 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         outputDirectory=runDirectory+'/run'+str(fold)
         os.makedirs(outputDirectory)
         
-        #Print file splits to runDirectory
+        ##print file splits to runDirectory
         fileDF.to_csv(outputDirectory+'/fileSplits.csv')
-
         end=time.time()
-        print('finished randomly creating subgroups '+str(end-start)+' seconds')
-        sys.stdout.flush()        
+        print('finished making subgroups '+str(end-start)+' seconds')
+        sys.stdout.flush()
+        
+#        end=time.time()
+#        #print('finished randomly creating subgroups '+str(end-start)+' seconds')
+#        sys.stdout.flush()        
         
         ################################
         #####Perform group analysis#####
         ################################
         
         #Create paramList
-        paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount,startCount,netAngle] for x in subgroupList]
-        
+#        paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount] for x in subgroupList]
+        paramList=[subgroupList[0],fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount]
         #Run calculation
-        xPool=mp.Pool(processes=nCores)    
-        outputList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
-        masterOutput=[p.get() for p in outputList]    
-        masterOutput=[textAnalysis(x) for x in paramList]  
-#        masterOutput=Parallel(n_jobs=2)(delayed(textAnalysis)(x) for x in paramList)  
+        print('begin text analysis')
+        sys.stdout.flush()
+#        masterOutput=[textAnalysis(x) for x in paramList]
+        masterOutput=textAnalysis(paramList)
+        print('completed text analysis')
+        sys.stdout.flush()  
         #Create output file
-        outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
-        outputDF.to_csv(outputDirectory+'/masterOutput.csv')
+#        outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
+#        outputDF.to_csv(outputDirectory+'/masterOutput.csv')
 
         
     
@@ -190,24 +232,15 @@ if __name__ == '__main__':
     svdInt=50
 #    cvWindow=6
     simCount=1000
-    coreString=os.environ['SLURM_JOB_CPUS_PER_NODE']
-    coreString=''.join([c if c.isdigit() else ' ' for c in coreString])
-#    nCores=reduce(lambda x, y: x*y,[int(x) for x in coreString.split() if x.isdigit()])
-    nCores=int(coreString[0])
     
     
     
     startTimeTotal=time.time()
-    #Try hyper-parameter optimization on window range from 2 to 6
-    for cocoWindow in range(2,4):
-        for cvWindow in range(2,3):
-            for startCount in range(0,6,5):
-                for netAngle in range(0,31,15):
-                    runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores)
-    
-    xPool=mp.Pool(processes=nCores)    
-    runList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
-    masterOutput=[p.get() for p in outputList]        
+    #Try hyper-parameter optimization on window range from 5 to 15
+    for cocoWindow in range(4,5):
+        for cvWindow in range(4,5):
+            
+            runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,cocoWindow,svdInt,cvWindow,simCount)
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')
     sys.stdout.flush()
