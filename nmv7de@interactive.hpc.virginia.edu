@@ -10,7 +10,7 @@ import sys, os
 import gc
 #os.chdir('./github/nmvenuti/DSI_Religion/')
 #from joblib import Parallel, delayed
-#import multiprocessing as mp
+import multiprocessing as mp
 import os.path
 import numpy as np
 import pandas as pd
@@ -105,7 +105,7 @@ def textAnalysis(paramList):
     #Append outputs to masterOutput
     return(['_'.join(groupId)]+[len(subFileList),timeRun]+sentimentList+judgementAvg+[avgSD]+[avgEVC])   
 
-def runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount):
+def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores):
     ###############################
     #####Raw File List Extract#####
     ###############################
@@ -133,10 +133,17 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCou
         #####Set up random binning#####
         ###############################
                         
-        fileDF=pd.read_csv('./data_dsicap/test_train/fileSplit_'+str(fold)+'.csv')
+        #Loop through each group and create sub bins
+        fileList=[]
+        for groupId in groupList:
+            subGroup=[x for x in rawFileList if groupId == x[0]]
+            randomSample=list(np.random.choice(range(len(subGroup)),size=len(subGroup),replace=False))
+            splitIndex=int((1-testSplit)*len(subGroup))
+            groupId=['train'+ "%02d" %int(i/groupSize) if i<splitIndex else 'test'+ "%02d" %int((i-splitIndex)/groupSize) for i in randomSample]
+            
+            fileList=fileList+[[subGroup[i][0],subGroup[i][1],groupId[i]] for i in range(len(subGroup))]
         
-        fileList=fileDF.values.tolist()
-        fileList=[[fileList[i][1],fileList[i][2],fileList[i][3]] for i in range(len(fileList))]
+        fileDF=pd.DataFrame(fileList,columns=['group','filepath','subgroup'])
         
         
         #Get set of subgroups
@@ -161,12 +168,10 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCou
         paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount,startCount,netAngle] for x in subgroupList]
         
         #Run calculation
-#        xPool=mp.Pool(processes=nCores)    
-#        outputList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
-#        masterOutput=[p.get() for p in outputList]    
-        masterOutput=[textAnalysis(x) for x in paramList]
-#        masterOutput=textAnalysis(paramList[0])  
-#        masterOutput=[masterOutput,masterOutput]
+        xPool=mp.Pool(processes=nCores)    
+        outputList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
+        masterOutput=[p.get() for p in outputList]    
+#        masterOutput=[textAnalysis(x) for x in paramList]  
 #        masterOutput=Parallel(n_jobs=2)(delayed(textAnalysis)(x) for x in paramList)  
         #Create output file
         outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
@@ -187,18 +192,17 @@ if __name__ == '__main__':
     cvWindow=int(sys.argv[2])
     startCount=int(sys.argv[3])
     netAngle=int(sys.argv[4])
-#    cocoWindow=2
-#    cvWindow=2
-#    startCount=0
-#    netAngle=15
-    crossValidate=3
+    crossValidate=1
     groupSize=10
-#    testSplit=.3
+    testSplit=0.1
     targetWordCount=10
     svdInt=50
     simCount=1000
+    coreString=os.environ['SLURM_JOB_CPUS_PER_NODE']
+    coreString=''.join([c if c.isdigit() else ' ' for c in coreString])
+    nCores=int(coreString[0])
     
-    runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount)
+    runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores)
         
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')

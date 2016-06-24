@@ -7,9 +7,10 @@ Created on Thu Jun  2 15:23:11 2016
 import time
 start=time.time()
 import sys, os
+import gc
 #os.chdir('./github/nmvenuti/DSI_Religion/')
 #from joblib import Parallel, delayed
-import multiprocessing as mp
+#import multiprocessing as mp
 import os.path
 import numpy as np
 import pandas as pd
@@ -25,7 +26,7 @@ import sentimentAnalysis as sa
 import networkQuantification as nq
 
 end=time.time()
-sys.stdout = open("output.txt", "a")
+#sys.stdout = open("output.txt", "a")
 print(str(datetime.now()))
 print('finished loading packages after '+str(end-start)+' seconds')
 sys.stdout.flush()
@@ -97,10 +98,14 @@ def textAnalysis(paramList):
     timeRun=endTime-startTime
     print('finished running'+'_'.join(groupId)+' in '+str(end-start)+' seconds')
     sys.stdout.flush()
+    
+    #Delete and garbage collect
+    del CoCo, TF, docTF, DSM, CVDict, cosineSimilarity
+    gc.collect()
     #Append outputs to masterOutput
     return(['_'.join(groupId)]+[len(subFileList),timeRun]+sentimentList+judgementAvg+[avgSD]+[avgEVC])   
 
-def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores):
+def runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount):
     ###############################
     #####Raw File List Extract#####
     ###############################
@@ -128,17 +133,10 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         #####Set up random binning#####
         ###############################
                         
-        #Loop through each group and create sub bins
-        fileList=[]
-        for groupId in groupList:
-            subGroup=[x for x in rawFileList if groupId == x[0]]
-            randomSample=list(np.random.choice(range(len(subGroup)),size=len(subGroup),replace=False))
-            splitIndex=int((1-testSplit)*len(subGroup))
-            groupId=['train'+ "%02d" %int(i/groupSize) if i<splitIndex else 'test'+ "%02d" %int((i-splitIndex)/groupSize) for i in randomSample]
-            
-            fileList=fileList+[[subGroup[i][0],subGroup[i][1],groupId[i]] for i in range(len(subGroup))]
+        fileDF=pd.read_csv('./data_dsicap/test_train/fileSplit_'+str(fold)+'.csv')
         
-        fileDF=pd.DataFrame(fileList,columns=['group','filepath','subgroup'])
+        fileList=fileDF.values.tolist()
+        fileList=[[fileList[i][1],fileList[i][2],fileList[i][3]] for i in range(len(fileList))]
         
         
         #Get set of subgroups
@@ -163,10 +161,12 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
         paramList=[[x,fileList,targetWordCount,cocoWindow,svdInt,cvWindow,simCount,startCount,netAngle] for x in subgroupList]
         
         #Run calculation
-        xPool=mp.Pool(processes=nCores)    
-        outputList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
-        masterOutput=[p.get() for p in outputList]    
-        masterOutput=[textAnalysis(x) for x in paramList]  
+#        xPool=mp.Pool(processes=nCores)    
+#        outputList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
+#        masterOutput=[p.get() for p in outputList]    
+        masterOutput=[textAnalysis(x) for x in paramList]
+#        masterOutput=textAnalysis(paramList[0])  
+#        masterOutput=[masterOutput,masterOutput]
 #        masterOutput=Parallel(n_jobs=2)(delayed(textAnalysis)(x) for x in paramList)  
         #Create output file
         outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
@@ -179,35 +179,35 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCoun
 
 #Set inital conditions and run
 if __name__ == '__main__':
+    startTimeTotal=time.time()
     rawPath = './data_dsicap/'
     groupList=['DorothyDay','JohnPiper','MehrBaba','NaumanKhan','PastorAnderson',
-               'Rabbinic','Shepherd','Unitarian','WBC']
-    crossValidate=1
+       'Rabbinic','Shepherd','Unitarian','WBC']
+    cocoWindow=int(sys.argv[1])
+    cvWindow=int(sys.argv[2])
+    startCount=int(sys.argv[3])
+    netAngle=int(sys.argv[4])
+#    cocoWindow=2
+#    cvWindow=2
+#    startCount=0
+#    netAngle=15
+    crossValidate=3
     groupSize=10
-    testSplit=0.1
+#    testSplit=.3
     targetWordCount=10
-#    cocoWindow=6
     svdInt=50
-#    cvWindow=6
     simCount=1000
-    coreString=os.environ['SLURM_JOB_CPUS_PER_NODE']
-    coreString=''.join([c if c.isdigit() else ' ' for c in coreString])
-#    nCores=reduce(lambda x, y: x*y,[int(x) for x in coreString.split() if x.isdigit()])
-    nCores=int(coreString[0])
+    print('cocoWindow '+str(cocoWindow))
+    sys.stdout.flush()
+    print('cvWindow '+str(cvWindow))
+    sys.stdout.flush()
+    print('netAngle '+str(netAngle))
+    sys.stdout.flush()
+    print('startCount '+str(startCount))
+    sys.stdout.flush()
     
-    
-    
-    startTimeTotal=time.time()
-    #Try hyper-parameter optimization on window range from 2 to 6
-    for cocoWindow in range(2,4):
-        for cvWindow in range(2,3):
-            for startCount in range(0,6,5):
-                for netAngle in range(0,31,15):
-                    runMaster(rawPath,groupList,crossValidate,groupSize,testSplit,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount,nCores)
-    
-    xPool=mp.Pool(processes=nCores)    
-    runList=[xPool.apply_async(textAnalysis, args=(x,)) for x in paramList]
-    masterOutput=[p.get() for p in outputList]        
+    runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCount,cocoWindow,svdInt,cvWindow,netAngle,simCount)
+        
     endTimeTotal=time.time()
     print('finished entire run in :'+str((endTimeTotal-startTimeTotal)/60)+' minutes')
     sys.stdout.flush()
