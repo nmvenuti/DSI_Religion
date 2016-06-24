@@ -63,10 +63,22 @@ fileDF['id']=fileDF['coco'].map(str)+'_'+fileDF['cv'].map(str)+'_'+fileDF['SC'].
 print(fileDF['id'].value_counts()[fileDF['id'].value_counts()<3])
 
 #complete fails
-print([str(coco)+'_'+str(cv)+'_'+str(sw)+'_'+str(ang) for  coco in [2,3,4,5,6] for cv in [2,3,4,5,6] for sw in [0,10,20,30] for ang in [30,45,60,75]
-if str(coco)+'_'+str(cv)+'_'+str(sw)+'_'+str(ang) not in set(fileDF['id']) ])
-#['2_6_10_45', '2_6_20_60', '2_6_30_30', '3_2_10_75', '3_2_20_60', '3_2_30_30', '3_2_30_60', '3_3_0_75', '3_6_20_45', '3_6_20_60', '4_3_0_30', '5_2_0_30']
+neededCuts=[str(coco)+'_'+str(cv)+'_'+str(sw)+'_'+str(ang) for  coco in [2,3,4,5,6] for cv in [2,3,4,5,6] for sw in [0,10,20,30] for ang in [30,45,60,75]
+if str(coco)+'_'+str(cv)+'_'+str(sw)+'_'+str(ang) not in set(fileDF['id']) ]
 
+for cut in neededCuts:
+    print(cut.split('_'))
+
+#['2', '6', '10', '45']
+#['2', '6', '30', '30']
+#['3', '2', '10', '75']
+#['3', '2', '20', '60']
+#['3', '2', '30', '30']
+#['3', '2', '30', '60']
+#['3', '6', '20', '45']
+#['3', '6', '20', '60']
+#['4', '3', '0', '30']
+#['5', '2', '0', '30']
 
 resultsList=[]
 failedFiles=[]
@@ -110,8 +122,8 @@ for iteration in range(len(cleanFileList)):
         yPred=rfModel.predict(signalTestDF[xList])
         
         #Get accuracy
-        rfAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
-        
+#        rfAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+        rfAccuracy=np.mean(np.abs(yActual-yPred))        
         #Perform same analysis with scaled data
         #Scale the data
         sc = StandardScaler()
@@ -125,15 +137,16 @@ for iteration in range(len(cleanFileList)):
         yPred=signalSVR.predict(signalStdTestDF[xList])
         
         #Get accuracy
-        svmAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+#        svmAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+        svmAccuracy=np.mean(np.abs(yActual-yPred))
         
         resultsList.append(['_'.join(map(str,cleanFileList[iteration][0:4]))]+cleanFileList[iteration][0:4]+[rfAccuracy,svmAccuracy])
     except ValueError:
         print(cleanFileList[iteration][4]+' failed')
         failedFiles.append(cleanFileList[iteration][4])
 
-resultsDF=pd.DataFrame(resultsList,columns=['id','cocowindow','cvWindow','startCount','netAngle','rfAccuracy','svmAccuracy'])
-
+resultsDF=pd.DataFrame(resultsList,columns=['id','cocowindow','cvWindow','netAngle','startCount','rfAccuracy','svmAccuracy'])
+resultsDF.to_csv(rawPath+'summaryOutput.csv')
 #Summarize data                                
 
         
