@@ -91,7 +91,7 @@ Studying semantic change through computation is a budding research area as the d
 
 \newcite{Boussidan2011} used a graph built from subsetted co-occurrence tables to create a map of lexical usages of words. Finding the cliques in this graph leads to words grouped on a semantic plane where “drunk” and “stagger” are connected despite different definitions because they are used in very similar contexts. While the work has interesting results, the requirement of computing cliques is computationally complex, limiting the scalability and accessibility of this method.
 
-\cite{Cook2010} attempted to detect “amelioration” (a word losing a negative meaning) and “pejoration” through a similar method. This was done by computing the average pointwise mutual similarity between a word and a set of assumed pejorative or positive words. Unfortunately, this method doesn’t create an intermediate space which could be connected to performative characteristics.
+\newcite{Cook2010} attempted to detect “amelioration” (a word losing a negative meaning) and “pejoration” through a similar method. This was done by computing the average pointwise mutual similarity between a word and a set of assumed pejorative or positive words. Unfortunately, this method doesn’t create an intermediate space which could be connected to performative characteristics.
 Work done by Venuti et al. validated the efficacy of characteristics of language as a signal to predict the tolerance level of religious discourse. To reach this conclusion, the CLDS developed a judgment identifier along with multiple semantic density algorithms to replicate the frequency of judgments and rigidity of keyword contexts. The CLDS tested the effectiveness of these implementations against two traditional semantic indicators as baselines: a topic model and sentiment analysis. Using three classification models (SVM, neural networks, and random forest), the CLDS compared the traditional semantic signals against the performative signals to predict linguistic flexibility as determined by subject matter experts. Through this analysis the CLDS were able to show that automated systems can be developed to assist in modeling the language flexibility of religious discourse, and that performative characteristics of language yield better prediction signals than semantic characteristics of language. Limitations of this work included minimal hyperparameter exploration and optimization and a class imbalance in the data set. 
 
 \section{Data}\label{data}
@@ -139,11 +139,11 @@ Percent positive and negative documents was calculated by following the matching
 
 To quantify the judgments signal, the CLDS team utilized a custom algorithm in conjunction with a Maxent POS tagger to identify judgments in text through syntactic parsing~\cite{Hornik2011}. The output of the algorithm is the average proportion of sentences that act as judgments. The algorithm split each document into sentence segments and word tokens. POS tagging was used on the word tokens to enable the identification of nouns, adjectives, and adverbs, the core components of a judgment. As depicted in Figure~\ref{fig:judgment} our algorithm used the POS tagging results to flag a combination of a noun, “to be” verb, and adjective or adverb in a sentence. The three components were required to be located in that order to be considered a match, which is an added constraint from the previous analysis. 
 
-\begin{figure}[ht]
+\begin{figure}[h]
 \begin{center}
 \includegraphics[width = .25\textwidth]{figs/judgment}
-\caption{fig:judgment}
-\label{default}
+\caption{Example of Judgment Syntactic Parsing}
+\label{fig:judgment}
 \end{center}
 \end{figure}
 
@@ -191,7 +191,23 @@ semantic density(w) = \sum_{k=1}^{l-1} \frac{<c_{ik},c_{i(k+1)}>}{||c_{ik}||*||c
 \section{Results}
 \label{results}
 
-% acc(bin, model) = \{1, |\hat{y}-y|\}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width = \textwidth]{figs/multipleAVGSD}
+\caption{fig:multipleAVGSD}
+\label{default}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width = \textwidth]{figs/multipleAVGEVC}
+\caption{fig:multipleAVGEVC}
+\label{default}
+\end{center}
+\end{figure}
+
 
 \begin{equation}
 acc(bin, model) = 
@@ -206,7 +222,6 @@ acc(model) = \frac{1}{|bins|} \sum_{bin  \epsilon  bins} acc(bin, model)
 \end{equation}
 
 
-[Insert Text Here]
 
 \section{Conclusions}
 \label{conclusions}
