@@ -69,84 +69,71 @@ if str(coco)+'_'+str(cv)+'_'+str(sw)+'_'+str(ang) not in set(fileDF['id']) ]
 for cut in neededCuts:
     print(cut.split('_'))
 
-#['2', '6', '10', '45']
-#['2', '6', '30', '30']
-#['3', '2', '10', '75']
-#['3', '2', '20', '60']
-#['3', '2', '30', '30']
-#['3', '2', '30', '60']
-#['3', '6', '20', '45']
-#['3', '6', '20', '60']
-#['4', '3', '0', '30']
-#['5', '2', '0', '30']
-
 resultsList=[]
 failedFiles=[]
 for iteration in range(len(cleanFileList)):
-    try:
-        #Get data frame for each cut
-        signalDF=pd.read_csv(cleanFileList[iteration][4])
-        
+    #only pull files with startcount ==0
+    if cleanFileList[iteration][3]==0:
+        try:
+            #Get data frame for each cut
+            signalDF=pd.read_csv(cleanFileList[iteration][4])
     
-       
-        
-        
-        
-        signalDF=addRank(signalDF)
-        
-        #Set up modeling parameters
-        xList=['perPos','perNeg','judgementFrac','avgSD', 'avgEVC']
-        yList=['rank']
-        signalDF=signalDF[signalDF['files']>5]
-        signalDF=signalDF.dropna()
-        
-        #Set up test train splits
-        trainIndex=[x for x in signalDF['groupId'] if 'train' in x]
-        testIndex=[x for x in signalDF['groupId'] if 'test' in x]
-        
-        signalTrainDF=signalDF[signalDF['groupId'].isin(trainIndex)]
-        signalTestDF=signalDF[signalDF['groupId'].isin(testIndex)]
-        
-        yActual=signalTestDF['rank'].tolist()
-        
-                                
-        
-        #Random Forest Regressor
-        rfModel=RandomForestRegressor(n_estimators=10,max_depth=10,
-                                      min_samples_split=1, max_features='auto',
-                                      random_state=0,n_jobs=-1)
-        
-        rfModel.fit(signalTrainDF[xList],signalTrainDF[yList])
-        
-        #Predict New Data
-        yPred=rfModel.predict(signalTestDF[xList])
-        
-        #Get accuracy
-#        rfAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
-        rfAccuracy=np.mean(np.abs(yActual-yPred))        
-        #Perform same analysis with scaled data
-        #Scale the data
-        sc = StandardScaler()
-        sc=sc.fit(signalTrainDF[xList])
-        signalStdTrainDF= pd.DataFrame(sc.transform(signalTrainDF[xList]),columns=xList)
-        signalStdTestDF = pd.DataFrame(sc.transform(signalTestDF[xList]),columns=xList)
-        signalSVR=svm.SVR(C=3,epsilon=0.1,kernel='rbf',max_iter=100000)
-        signalSVR.fit(signalStdTrainDF[xList],signalTrainDF[yList])
-        
-        #Predict New Data
-        yPred=signalSVR.predict(signalStdTestDF[xList])
-        
-        #Get accuracy
-#        svmAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
-        svmAccuracy=np.mean(np.abs(yActual-yPred))
-        
-        resultsList.append(['_'.join(map(str,cleanFileList[iteration][0:4]))]+cleanFileList[iteration][0:4]+[rfAccuracy,svmAccuracy])
-    except ValueError:
-        print(cleanFileList[iteration][4]+' failed')
-        failedFiles.append(cleanFileList[iteration][4])
+            signalDF=addRank(signalDF)
+            
+            #Set up modeling parameters
+            xList=['perPos','perNeg','judgementFrac','avgSD', 'avgEVC','perPosDoc','perNegDoc','judgementCount']
+            yList=['rank']
+            signalDF=signalDF[signalDF['files']>5]
+            signalDF=signalDF.dropna()
+            
+            #Set up test train splits
+            trainIndex=[x for x in signalDF['groupId'] if 'train' in x]
+            testIndex=[x for x in signalDF['groupId'] if 'test' in x]
+            
+            signalTrainDF=signalDF[signalDF['groupId'].isin(trainIndex)]
+            signalTestDF=signalDF[signalDF['groupId'].isin(testIndex)]
+            
+            yActual=signalTestDF['rank'].tolist()
+            
+                                    
+            
+            #Random Forest Regressor
+            rfModel=RandomForestRegressor(n_estimators=10,max_depth=10,
+                                          min_samples_split=1, max_features='auto',
+                                          random_state=0,n_jobs=-1)
+            
+            rfModel.fit(signalTrainDF[xList],signalTrainDF[yList])
+            
+            #Predict New Data
+            yPred=rfModel.predict(signalTestDF[xList])
+            
+            #Get accuracy
+            rfAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+            rfMAE=np.mean(np.abs(yActual-yPred))        
+            #Perform same analysis with scaled data
+            #Scale the data
+            sc = StandardScaler()
+            sc=sc.fit(signalTrainDF[xList])
+            signalStdTrainDF= pd.DataFrame(sc.transform(signalTrainDF[xList]),columns=xList)
+            signalStdTestDF = pd.DataFrame(sc.transform(signalTestDF[xList]),columns=xList)
+            signalSVR=svm.SVR(C=3,epsilon=0.1,kernel='rbf',max_iter=100000)
+            signalSVR.fit(signalStdTrainDF[xList],signalTrainDF[yList])
+            
+            #Predict New Data
+            yPred=signalSVR.predict(signalStdTestDF[xList])
+            
+            #Get accuracy
+            svmAccuracy=float(len([i for i in range(len(yPred)) if abs(yActual[i]-yPred[i])<1])/float(len(yPred)))
+            svmMAE=np.mean(np.abs(yActual-yPred))
+            
+            resultsList.append(['_'.join(map(str,cleanFileList[iteration][0:4]))]+cleanFileList[iteration][0:4]+[rfAccuracy,rfMAE,svmAccuracy,svmMAE])
+        except ValueError:
+            print(cleanFileList[iteration][4]+' failed')
+            failedFiles.append(cleanFileList[iteration][4])
 
-resultsDF=pd.DataFrame(resultsList,columns=['id','cocowindow','cvWindow','netAngle','startCount','rfAccuracy','svmAccuracy'])
-resultsDF.to_csv(rawPath+'summaryOutput.csv')
+resultsDF=pd.DataFrame(resultsList)
+resultsDF.columns=['id','cocowindow','cvWindow','netAngle','startCount','rfAccuracy','rfMAE','svmAccuracy','svmMAE']
+resultsDF.to_csv(rawPath+'summaryOutput-full.csv')
 #Summarize data                                
 
         
