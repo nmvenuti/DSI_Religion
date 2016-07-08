@@ -145,7 +145,7 @@ Percent positive and negative documents was calculated by following the matching
 
 To quantify the judgments signal, the CLDS team utilized a custom algorithm in conjunction with a Maxent POS tagger to identify judgments in text through syntactic parsing ~\cite{Hornik2011}. The output of the algorithm is the average proportion of sentences that act as judgments, along with the average number of judgments in each document. The algorithm split each document into sentence segments and word tokens. POS tagging was used on the word tokens to enable the identification of nouns, adjectives, and adverbs, the core components of a judgment. As depicted in Figure ~\ref{fig:judgment} our algorithm used the POS tagging results to flag a combination of a noun, ‚Äúto be‚Äù verb, and adjective or adverb in a sentence. The three components were required to be located in that order to be considered a match, which is an added constraint from the previous analysis.  
 
-\begin{figure}[h]
+\begin{figure}[!h]
 \begin{center}
 \includegraphics[width = .25\textwidth]{figs/judgment}
 \caption{Example of Judgment Syntactic Parsing}
@@ -198,7 +198,7 @@ Eigenvector centrality scores measure the influence of a network upon a node by 
 
 To extend the previous work, key hyperparameters affecting the computation of the linguistic signals were identified. We believed that more effectively selecting and analyzing these variables would lead to a stronger prediction signal. Additionally, the assessment of the impact of these parameters could assist in extending this research to additional fields and discourse analyses.
 
-\subsection{Co-Occurrence Window}
+\subsection{Co-occurrence Window}
 \label{cooc window}
 
 The first parameter selected for optimization was the co-occurrence window, $w_i$. This window directly affects the representation of the distribution of the language within the corpus. A larger window will incorporate more information about the words occurring around other words. This may better encapsulate the language or may add noise to the analysis. For this reason, windows of size 2 to 6 were explored during hyperparameter optimization. The ideal value was determined by that which best improved the accuracy of the model over a 3-fold cross validation.
@@ -206,7 +206,7 @@ The first parameter selected for optimization was the co-occurrence window, $w_i
 \subsection{Context Window}
 \label{sect:context window}
 
-Context Window size was also analyzed to determine the optimal value. In contrast to the co-occurrence window which measures general word usage, the context window size impacts the specific measure of a word‚Äôs usage. Without knowledge of how the proximity of a word affects the analysis of the variability of its usage, we sought to vary the window size from 2 to 6 to determine the window size with the best predictive performance.
+Context Window size was also analyzed to determine the optimal value. In contrast to the co-occurrence window which measures general word usage, the context window size impacts the specific measure of a word'Äôs usage. Without knowledge of how the proximity of a word affects the analysis of the variability of its usage, we sought to vary the window size from 2 to 6 to determine the window size with the best predictive performance.
 
 \subsection{Network Adjacency Angle}
 \label{sect:angle}
@@ -221,9 +221,9 @@ In an effort to determine the effects of the hyperparameters on the semantic den
 
 As shown in Figure \ref{fig:SD_surface} the average semantic density of the groups was mapped to the co-occurrence window and context vector window grid search. By plotting the average semantic density in relation to a co-occurrence window range of 2-6 and a context window range of 2-6, Figure \ref{fig:SD_surface} shows that an increase of these parameters results in an increase of the average semantic density of the keywords. These results are intuitive, as the increases of these parameters allows for greater information to be held in the context vectors, and in turn would result in a cosine similarity closer to one. The figure also shows that a limit is reached at a co-occurrence window of 5 and a context vector window of 5, where the average semantic density settles just above an average cosine similarity of 0.75. This indicates that little gain could be achieved by increasing these windows further, as there would be little distinction in the average semantic density of the keywords in the analysis.
 
-\begin{figure}[h]
+\begin{figure}[!h]
 \begin{center}
-\includegraphics[width = \textwidth]{figs/SD_surface}
+\includegraphics[width = .5\textwidth]{figs/SD_surface}
 \caption{Average Semantic Density versus Hyperparameters}
 \label{fig:SD_surface}
 \end{center}
@@ -231,9 +231,9 @@ As shown in Figure \ref{fig:SD_surface} the average semantic density of the grou
 
 To visualize the effects on the co-occurrence window size and network angle was plotted against the average eigenvector centrality. As seen in Figure \ref{fig:EVC_surface} the average eigenvector centrality trends upward as the co-occurrence window increases, and the network adjacency angle degrees. These results are also intuitive, as an increase in the co-occurrence window would result in a greater connection between the words within the discourse, and the lower adjacency angle would result in more edges between the nodes within the graphs. As eigenvector centrality is a bounded variable between 0 and 1, we see that the limit of 1 is nearly reached under the max conditions of 30 degrees and a co-occurrence window of 6, and we can hypothesize that this limit would be achieved upon increasing the co-occurrence window or decreasing the network angle further.
 
-\begin{figure}[h]
+\begin{figure}[!h]
 \begin{center}
-\includegraphics[width = \textwidth]{figs/EVC_surface}
+\includegraphics[width = .5\textwidth]{figs/EVC_surface}
 \caption{Average Eigenvector Centrality versus Hyperparameters}
 \label{fig:EVC_surface}
 \end{center}
@@ -241,7 +241,7 @@ To visualize the effects on the co-occurrence window size and network angle was 
 
 In order to determine the relationship between average semantic density and group rank, the group rank was plotted against the average semantic density of the group, while varying the co-occurrence window and context vector. As seen in Figure \ref{fig:multipleAVGSD} the average semantic density is typically higher for groups with a lower rank, and the range between the highest semantic density and the lowest semantic density appears to decrease as the co-occurrence window and the context vector window increases. The ideal configuration of co-occurrence window and context vector window would yield a linear relationship between semantic density and group rank, as that would provided a linear separation boundary for the learning algorithms used. With this in mind a visual inspection of Figure \ref{fig:multipleAVGSD} indicates that a lower configuration may provide this trend, although there is not an explicit separation for any of the configurations.
 
-\begin{figure}[h]
+\begin{figure}[!h]
 \begin{center}
 \includegraphics[width = \textwidth]{figs/multipleAVGSD}
 \caption{Average Semantic Density versus Hyperparameters}
@@ -251,7 +251,7 @@ In order to determine the relationship between average semantic density and grou
 
 Similar to the analysis above, we wanted to determine the distribution of average eigenvector centrality to group rank, as the co-occurrence window and network adjacency angle were varied. As depicted in Figure \ref{fig:multipleAVGEVC} the average eigenvector centrality distribution over group rank is disambiguous at minimum and maximum co-occurrence windows and network angles. Through visual inspection it appears that for none of the configurations there is a separable plane of average eigenvector centrality. As this metric is determined through the selection of keywords, it appears that a different methodology may need to be developed to identify influential keywords, rather than the one being utilized by the GRC-ERT.
 
-\begin{figure}[h]
+\begin{figure}[!h]
 \begin{center}
 \includegraphics[width = \textwidth]{figs/multipleAVGEVC}
 \caption{fig:multipleAVGEVC}
@@ -279,18 +279,44 @@ acc(model) = \frac{1}{|bins|} \sum_{bin  \epsilon  bins} acc(bin, model)
 
 Using three-fold cross validation this mean absolute error (MAE) was utilized to determine the optimal hyper-parameter strategy for the two modeling approaches. MAE was chosen as the optimization parameter as it is not bounded as our accuracy metric is. Taking the medians of the accuracies and MAEs of the three-folds, Table \ref{table:TABLE_SVM} and Table \ref{table:TABLE_RF} provide the top five configurations for SVM-R and random forest, respectively.
 
-[insert SVM table]
+\begin{table}[]
+\centering
+\caption{SVM}
+\label{able:TABLE_SVM}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Co-Occurrence Window & Network Angle & Context Vector Window & Accuracy & MAE \\ \hline
+5 & 6 & 30 & 85.85\% & 0.4464 \\ \hline
+5 & 5 & 30 & 85.85\% & 0.449 \\ \hline
+6 & 6 & 30 & 84.91\% & 0.451 \\ \hline
+6 & 3 & 45 & 84.91\% & 0.4514 \\ \hline
+6 & 6 & 45 & 84.91\% & 0.4519 \\ \hline
+\end{tabular}
+\end{table}
 
-[insert RF table]
+\begin{table}[]
+\centering
+\caption{Random Forest}
+\label{table:TABLE_RF}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Co-Occurrence Window & Network Angle & Context Vector Window & Accuracy & MAE \\ \hline
+2 & 75 & 2 & 92.45\% & 0.3085 \\ \hline
+3 & 60 & 3 & 91.51\% & 0.3104 \\ \hline
+3 & 60 & 2 & 90.57\% & 0.3123 \\ \hline
+2 & 60 & 2 & 91.51\% & 0.3132 \\ \hline
+3 & 75 & 2 & 91.51\% & 0.3170 \\ \hline
+\end{tabular}
+\end{table}
 
-As seen above the greatest accuracy achieved by the random forest regression with a co-occurrence window of 2, a context vector window of 2 and a network angle of 75. With that said it is important to note that it is less computationally intensive to calculate lower angle network graphs, and smaller co-occurrence and context vector windows. With that in mind one may  consider to use the random forest configuration of a co-occurrence window of 2, and context vector window of 2 and a network angle of 60, as it would yield nearly identical prediction with less computational load. For the SVM-R the optimal configuration was a co-occurrence window of 5, a context vector window of 6 and a network angle of 30 degrees. Under these optimal conditions both the SVM-R andr random forest regression outperformed the previous models whose prediction accuracies were 84\% and 86\%, respectively. It is important to note that due to the increase in data, and slight updates to the judgement and sentiment algorithms, it is difficult to perform a one to one comparison of the lift provided in this analysis. Under both these configurations, it appears that the random forest regression is the optimal model for this analysis, as it provides roughly a 6\% lift in accuracy.
+As seen above the greatest accuracy achieved by the random forest regression with a co-occurrence window of 2, a context vector window of 2 and a network angle of 75. With that said it is important to note that it is less computationally intensive to calculate lower angle network graphs, and smaller co-occurrence and context vector windows. With that in mind one may  consider to use the random forest configuration of a co-occurrence window of 2, and context vector window of 2 and a network angle of 60, as it would yield nearly identical prediction with less computational load. For the SVM-R the optimal configuration was a co-occurrence window of 5, a context vector window of 6 and a network angle of 30 degrees. Under these optimal conditions both the SVM-R and random forest regression outperformed the previous models whose prediction accuracies were 84\% and 86\%, respectively. It is important to note that due to the increase in data, and slight updates to the judgement and sentiment algorithms, it is difficult to perform a one to one comparison of the lift provided in this analysis. Under both these configurations, it appears that the random forest regression is the optimal model for this analysis, as it provides roughly a 6\% lift in accuracy.
 
 \section{Conclusions}
 \label{conclusions}
 
 As the number of incidents of religious violence continues to increase, the need for scalable and accurate prediction systems intensifies. Analysis of the semantic characteristics of language has shown promise in prior research and the manual evaluation of performative characteristics by the GCR-ERT, has produced good predictions of flexibility of keywords in religious discourse. The work in this paper has significantly extended these previous results and shown the effects hyperparameter selection has on the performative features, and in turn the effects these parameters have on overall prediction accuracy. By visualizing these effects, a more informed methodology can be developed in future studies. 
 
-While these results show promise, additional work is needed. As only a select set of values were tested due to computational demands of higher window sizes, further studies need to be conducted to further understand the effects of hyperparameters on these signals. Additionally, the process around identifying keywords needs to be further analyzed, so more robust group-specific keywords can be identified automatically, which may provide more separable trends in the network quantification and semantic density analyses. Lastly, a wider array of documents needs to be analyzed with a greater variety of religious groups in each class. This would prevent the algorithms from over-fitting based on group specific tendencies and illustrate the performative characteristics of these group‚Äôs discourse.
+While these results show promise, additional work is needed. As only a select set of values were tested due to computational demands of higher window sizes, further studies need to be conducted to further understand the effects of hyperparameters on these signals. Additionally, the process around identifying keywords needs to be further analyzed, so more robust group-specific keywords can be identified automatically, which may provide more separable trends in the network quantification and semantic density analyses. Lastly, a wider array of documents needs to be analyzed with a greater variety of religious groups in each class. This would prevent the algorithms from over-fitting based on group specific tendencies and illustrate the performative characteristics of these group'Äôs discourse.
 
 \section*{Acknowledgements}
 
@@ -301,163 +327,5 @@ when submitting your paper for review.
 
 \bibliographystyle{acl}
 \bibliography{coling2016}
-
-\begin{thebibliography}{}
-
-\bibitem[\protect\citename{Barsalou}1993]{Barsalou1993}
-L.~Barsalou.
-\newblock 1993.
-\newblock Flexibility, structure, and linguistic vagary in concepts:
-  Manifestations of a compositional system of perceptual symbols.
-\newblock {\em Theories of memory}, 1:29--31.
-
-\bibitem[\protect\citename{Blei \bgroup et al.\egroup }2003]{Blei2003}
-David~M Blei, Andrew~Y Ng, and Michael~I Jordan.
-\newblock 2003.
-\newblock Latent dirichlet allocation.
-\newblock {\em Journal of machine Learning research}, 3(Jan):993--1022.
-
-\bibitem[\protect\citename{Boussidan and Ploux}2011]{Boussidan2011}
-Armelle Boussidan and Sabine Ploux.
-\newblock 2011.
-\newblock Using topic salience and connotational drifts to detect candidates to
-  semantic change.
-\newblock In {\em Proceedings of the Ninth International Conference on
-  Computational Semantics}, pages 315--319. Association for Computational
-  Linguistics.
-
-\bibitem[\protect\citename{Bullinaria and Levy}2007]{Bullinaria2007}
-J.~Bullinaria and J.~Levy.
-\newblock 2007.
-\newblock Extracting semantic representations from word co-occurrence
-  statistics: A computational study.
-\newblock {\em Behavior research methods}, 39(3):510--526.
-
-\bibitem[\protect\citename{Bullinaria and Levy}2012]{Bullinaria2012}
-John~A. Bullinaria and Joseph~P. Levy.
-\newblock 2012.
-\newblock Extracting semantic representations from word co-occurrence
-  statistics: stop-lists, stemming, and svd.
-\newblock {\em Behavior Research Methods}, 44(3):890--907.
-
-\bibitem[\protect\citename{Cook and Stevenson}2010]{Cook2010}
-Paul Cook and Suzanne Stevenson.
-\newblock 2010.
-\newblock Automatically identifying changes in the semantic orientation of
-  words.
-\newblock In {\em LREC}.
-
-\bibitem[\protect\citename{Csardi and Nepusz}2006]{Csardi2006}
-Gabor Csardi and Tamas Nepusz.
-\newblock 2006.
-\newblock The igraph software package for complex network research.
-\newblock {\em InterJournal, Complex Systems}, 1695(5):1--9.
-
-\bibitem[\protect\citename{Estrada and Rodriguez-Velazquez}2005]{Estrada2005}
-Ernesto Estrada and Juan~A Rodriguez-Velazquez.
-\newblock 2005.
-\newblock Subgraph centrality in complex networks.
-\newblock {\em Physical Review E}, 71(5):056103.
-
-\bibitem[\protect\citename{Evert}2014]{Evert2014}
-Stefan Evert.
-\newblock 2014.
-\newblock Distributional semantics in r with the wordspace package.
-\newblock In {\em COLING (Demos)}, pages 110--114.
-
-\bibitem[\protect\citename{Feinerer and Hornik}2013]{Feinerer2013}
-Ingo Feinerer and K~Hornik.
-\newblock 2013.
-\newblock tm: Text mining package. r package version 0.5-9.1.
-
-\bibitem[\protect\citename{Hacker \bgroup et al.\egroup }2013]{Hacker2013}
-K.~Hacker, D.~Boje, V.~Nisbett, A.~Abdelali, and N.~Henry.
-\newblock 2013.
-\newblock Interpreting iranian leaders' conflict framing by combining latent
-  semantic analysis and pragmatist storytelling theory.
-\newblock In {\em Political Communication Division of the National
-  Communication Association annual conference}.
-
-\bibitem[\protect\citename{Hearst}1992]{Hearst1992}
-M.~Hearst.
-\newblock 1992.
-\newblock Automatic acquisition of hyponyms from large text corpora.
-\newblock In {\em Proc. 14th Conf. Computational linguistics}, volume~2, pages
-  539--545.
-
-\bibitem[\protect\citename{Hornik and Gr{\"u}n}2011]{Hornik2011}
-Kurt Hornik and Bettina Gr{\"u}n.
-\newblock 2011.
-\newblock topicmodels: An r package for fitting topic models.
-\newblock {\em Journal of Statistical Software}, 40(13):1--30.
-
-\bibitem[\protect\citename{Kozima}1993]{Kozima1993}
-H.~Kozima.
-\newblock 1993.
-\newblock Text segmentation based on similarity between words.
-\newblock In {\em Proc. 31st Annual Meeting Association Computational
-  Linguistics}, pages 286--288.
-
-\bibitem[\protect\citename{Lin}1998]{Lin1998}
-D.~Lin.
-\newblock 1998.
-\newblock Automatic retrieval and clustering of similar words.
-\newblock In {\em Proc. 17th Int. Conf. Computational linguistics}, volume~2,
-  pages 768--774.
-
-\bibitem[\protect\citename{Liu}2013]{Liu2013}
-Bing Liu.
-\newblock 2013.
-\newblock A list of positive and negative opinion words or sentiment words for
-  english.
-\newblock {\em l{\'\i}nea]. Disponible en: http://www. cs. uic. edu/\~{}
-  liub/.[{\'U}ltimo acceso: Junio 2015]}.
-
-\bibitem[\protect\citename{Loper and Bird}2002]{NLTK}
-Edward Loper and Steven Bird.
-\newblock 2002.
-\newblock Nltk: The natural language toolkit.
-\newblock In {\em Proceedings of the ACL-02 Workshop on Effective Tools and
-  Methodologies for Teaching Natural Language Processing and Computational
-  Linguistics - Volume 1}, ETMTNLP '02, pages 63--70, Stroudsburg, PA, USA.
-  Association for Computational Linguistics.
-
-\bibitem[\protect\citename{Richardson}2015]{Richardson2015}
-Leonard Richardson.
-\newblock 2015.
-\newblock Beautiful soup documentation.
-
-\bibitem[\protect\citename{Sagi \bgroup et al.\egroup }2009]{Sagi2009}
-Eyal Sagi, Stefan Kaufmann, and Brady Clark.
-\newblock 2009.
-\newblock Semantic density analysis: Comparing word meaning across time and
-  phonetic space.
-\newblock In {\em Proceedings of the Workshop on Geometrical Models of Natural
-  Language Semantics}, pages 104--111. Association for Computational
-  Linguistics.
-
-\bibitem[\protect\citename{Searcey and Santora}2015]{Searcey2015}
-D.~Searcey and M.~Santora.
-\newblock 2015.
-\newblock Boko haram tops isis in ranking terror groups.
-\newblock {\em New York Times}, page~A6, November.
-
-\bibitem[\protect\citename{Venuti \bgroup et al.\egroup }2016]{venuti2016}
-Nicholas Venuti, Brian Sachtjen, Hope McIntyre, Chetan Mishra, Matthew Hays,
-  and Donald~E. Brown.
-\newblock 2016.
-\newblock Predicting the tolerance level of religious discourse through
-  computational linguistics.
-\newblock In {\em 2016 IEEE Systems and Information Engineering Design
-  Symposium (SIEDS)}, pages 309--314, April.
-
-\bibitem[\protect\citename{Yang \bgroup et al.\egroup }2010]{Yang2010}
-M.~Yang, S.~Wong, and J.~Coid.
-\newblock 2010.
-\newblock The efficacy of violence prediction: a meta-analytic comparison of
-  nine risk assessment tools.
-\newblock {\em Psychological bulletin}, 136(5):740.
-
-\end{thebibliography}
 
 \end{document}
