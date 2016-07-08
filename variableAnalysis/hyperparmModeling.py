@@ -81,7 +81,7 @@ for iteration in range(len(cleanFileList)):
             signalDF=addRank(signalDF)
             
             #Set up modeling parameters
-            xList=['perPos','perNeg','judgementFrac','avgSD', 'avgEVC','perPosDoc','perNegDoc','judgementCount']
+            xList=['perPos','perNeg','perPosDoc','perNegDoc','judgementFrac','judgementCount','avgSD', 'avgEVC']
             yList=['rank']
             signalDF=signalDF[signalDF['files']>5]
             signalDF=signalDF.dropna()
@@ -127,13 +127,12 @@ for iteration in range(len(cleanFileList)):
             svmMAE=np.mean(np.abs(yActual-yPred))
             
             resultsList.append(['_'.join(map(str,cleanFileList[iteration][0:4]))]+cleanFileList[iteration][0:4]+[rfAccuracy,rfMAE,svmAccuracy,svmMAE])
-        except ValueError:
+        except:
             print(cleanFileList[iteration][4]+' failed')
             failedFiles.append(cleanFileList[iteration][4])
-
-resultsDF=pd.DataFrame(resultsList)
-resultsDF.columns=['id','cocowindow','cvWindow','netAngle','startCount','rfAccuracy','rfMAE','svmAccuracy','svmMAE']
-resultsDF.to_csv(rawPath+'summaryOutput-full.csv')
+print(failedFiles)
+resultsDF=pd.DataFrame(resultsList,columns=['id','cocowindow','cvWindow','netAngle','startCount','rfAccuracy','rfMae','svmAccuracy','svmMae'])
+resultsDF.to_csv(rawPath+'-summaryOutput-full.csv')
 #Summarize data                                
 
         
