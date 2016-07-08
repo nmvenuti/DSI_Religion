@@ -41,10 +41,10 @@ def addRank(signalDF):
 #Define data filepath
 rawPath='./github/nmvenuti/DSI_Religion/pythonOutput/run1/cleanedOutput'
 
-#Define data filepath
-rawPath='./github/nmvenuti/DSI_Religion/pythonOutput/run1/cleanedOutput'
+###################################################
+###Pull in data to generate median summary files###
+###################################################
 
-#Pull in data if not already loaded
 resultsDF=pd.read_csv(rawPath+'-summaryOutput-full.csv')
 resultsDF.drop('Unnamed: 0',axis=1, inplace=True)
 testDF=resultsDF[['cocowindow','startCount','netAngle','cvWindow','rfAccuracy','rfMae','svmAccuracy','svmMae']].groupby(['cocowindow','startCount','netAngle','cvWindow']).median().reset_index()
@@ -56,6 +56,9 @@ testDF.sort('rfAccuracy',ascending=True).head(n=10).to_csv(rawPath+'bestRF-mae.c
 #Top 10 SVM medians
 testDF.sort('svmAccuracy',ascending=True).head(n=10).to_csv(rawPath+'bestSVM-mae.csv')
 
+###########################################################
+###Get outputs of files for visual analysis of variables###
+###########################################################
 
 #Get raw files
 rawFileList=[]
@@ -64,8 +67,9 @@ for dirpath, dirnames, filenames in os.walk(rawPath):
         if 'masterOutput.csv' in filename:
             rawFileList.append(os.path.join(dirpath, filename))
 
-#Create list of lists with coco,cv,netAng,45,SC
+#Create list of lists with coco,cv,netAng,SC
 cleanFileList=[[int(x) for x in y.replace('/','_').split('_') if x.isdigit()]+[y] for y in rawFileList]
+
 #Convert to dataframe
 fileDF=pd.DataFrame(cleanFileList,columns=['coco','cv','netAng','SC','filepath'])
 
@@ -114,7 +118,7 @@ def scatter3d(x,y,z,xTitle,yTitle,zTitle,colorTitle, cs, colorsMap='gray_r',save
     cbar=fig.colorbar(scalarMap)
     cbar.set_label(colorTitle)
     if saveFig:
-        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+zTitle+'.png')   # save the figure to file  
+        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+zTitle+'.png',bbox_inches='tight')  # save the figure to file  
 
 #x=np.array(totalDF['coco'])
 #y=np.array(totalDF['cv'])
@@ -146,7 +150,7 @@ def surface3D(df,x,y,z,xTitle,yTitle,zTitle,plotTitle,colorsMap='gray_r',saveFig
     fig.colorbar(surf, shrink=0.5, aspect=5)
     plt.title(plotTitle)
     if saveFig:
-        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+plotTitle+'.png')   # save the figure to file   
+        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+plotTitle+'.png',bbox_inches='tight')   # save the figure to file   
 
     # ~~~~ MODIFICATION TO EXAMPLE ENDS HERE ~~~~ #
     
