@@ -9,7 +9,7 @@ Sentiment Analysis
 #Import packages
 import sys
 import numpy as np
-sys.path.append('./python/')
+sys.path.append('./prototype_python/')
 #import syntacticParsing as sp
 import semanticDensity as sd
 

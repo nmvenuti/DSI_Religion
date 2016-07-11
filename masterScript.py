@@ -15,7 +15,7 @@ import os.path
 import numpy as np
 import pandas as pd
 from datetime import datetime
-sys.path.append('./python/')
+sys.path.append('./prototype_python/')
 import nltk
 nltk.download('punkt')
 nltk.download('maxent_treebank_pos_tagger')
