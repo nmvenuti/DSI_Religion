@@ -90,9 +90,9 @@ Another thread of research has focused on word usage or the performative charact
 
 At a more detailed level, \newcite{Bullinaria2007} evaluated the impact of stop-lists, word stemming, and singular value decomposition (SVD) on the performance of word-word co-occurrence statistics by comparing performance with several generic semantic tasks. They determined that neither word stop-lists nor word stemming significantly impacted performance, minimal context window size gave the best performance, and dimensionality reduction through SVD can improve performance.  
 
-\newcite{Boussidan2011} used a graph built from subsetted co-occurrence tables to create a map of lexical usages of words. Finding the cliques in this graph has interesting results but the computational complexity of computing cliques limits the scalability of this method.\newcite{Cook2010} used a similar approach to detect “amelioration” (a word losing a negative meaning) and “pejoration.” 
+\newcite{Boussidan2011} used a graph built from subsetted co-occurrence tables to create a map of lexical usages of words. Finding the cliques in this graph has interesting results but the computational complexity of computing cliques limits the scalability of this method. \newcite{Cook2010} used a similar approach to detect `amelioration' (a word losing a negative meaning) and `pejoration.' 
 
-Very recent work by \newcite{venuti2016} showed initial results that the pejorative characteristics of language can signal the tolerance level of religious discourse. They developed a judgment identifier along with multiple semantic density algorithms to replicate the frequency of judgments and the rigidity of keyword contexts. Testing showed that performative characteristics of language yield better predictive signals than than semantic-based approaches. This paper builds on and extends that work through more efficient implementations of text analysis algorithms (Section~\ref{signals}, hyperparameter optimization (Section~\ref{optimization}), and a larger, more expansive set of religious texts for testing (Section~\ref{data}).  
+Very recent work by \newcite{venuti2016} showed initial results that the pejorative characteristics of language can signal the tolerance level of religious discourse. They developed a judgment identifier along with multiple semantic density algorithms to replicate the frequency of judgments and the rigidity of keyword contexts. Testing showed that performative characteristics of language yield better predictive signals than than semantic-based approaches. This paper builds on and extends that work through more efficient implementations of text analysis algorithms (Section~\ref{signals}), hyperparameter optimization (Section~\ref{optimization}), and a larger, more expansive set of religious texts for testing (Section~\ref{data}).  
 
 \section{Data}\label{data}
 
@@ -123,11 +123,11 @@ To balance the requirements for increased observations for modeling and the text
 
 We normalized and cleaned all the documents prior to signal development to ensure data continuity between each algorithm. We extracted the raw text for each bin, tokenized,  and normalized the text by removing punctuation, converting to lowercase, and converting all numbers to a single symbol. The tokens were stemmed, but stopwords were not removed. These tokens served as the inputs for all signals with the exception of the judgement algorithm.
 
-To identify keywords for the analysis, we applied the Maxent POS Tagger from the python nltk package  to the corpus in order to develop the list of keywords which were used as input to the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsec:network}) \cite{loper2002}. Word counts were generated for each unique word/POS tag combination for each bin. The top 10 most frequent adjectives and adverbs were selected for each bin and used to as the keywords. These keywords were then fed into the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsec:network}). 
+To identify keywords for the analysis, we applied the Maxent POS Tagger from the python nltk package  to the corpus in order to develop the list of keywords which were used as input to the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsect:network}) \cite{loper2002}. Word counts were generated for each unique word/POS tag combination for each bin. The top 10 most frequent adjectives and adverbs were selected for each bin and used to as the keywords. These keywords were then fed into the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsect:network}). 
 
 \section{Signals}\label{signals}
 
-Building on the work in \newcite{venutie2016} we constructed four signals as input to the ranking model; context vectors similarity, judgement fractions, document sentiment, and network quantification. Significant modifications were made to the judgement and sentiment algorithms to better model the requisite features and to provide more normalized outputs. These methods were also reimplemented to computation times and add greater modeling flexibility. The algorithms for the computation of each signal as implemented in this study are described in the following subsections.
+Building on the work in \newcite{venuti2016} we constructed four signals as input to the ranking model; context vectors similarity, judgement fractions, document sentiment, and network quantification. Significant modifications were made to the judgement and sentiment algorithms to better model the requisite features and to provide more normalized outputs. These methods were also reimplemented to computation times and add greater modeling flexibility. The algorithms for the computation of each signal as implemented in this study are described in the following subsections.
 
 \subsection{Sentiment}
 
@@ -137,15 +137,7 @@ The sentiment of each document was determined by the greater value of word match
 
 \subsection{Judgment Numbers}\label{subsec:judgment}
 
-To quantify the judgments signal, the CLDS team utilized a custom algorithm in conjunction with a Maxent POS tagger to identify judgments in text through syntactic parsing ~\cite{Hornik2011}. The output of the algorithm is the average proportion of sentences that act as judgments, along with the average number of judgments in each document. The algorithm split each document into sentence segments and word tokens. POS tagging was used on the word tokens to enable the identification of nouns, adjectives, and adverbs, the core components of a judgment. As depicted in Figure ~\ref{fig:judgment} our algorithm used the POS tagging results to flag a combination of a noun, “to be” verb, and adjective or adverb in a sentence. The three components were required to be located in that order to be considered a match, which is an added constraint from the previous analysis.  
-
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width = .25\textwidth]{figs/judgment}
-\caption{Example of Judgment Syntactic Parsing}
-\label{fig:judgment}
-\end{center}
-\end{figure}
+To quantify the judgments signal, the CLDS team utilized a custom algorithm in conjunction with a Maxent POS tagger to identify judgments in text through syntactic parsing ~\cite{Hornik2011}. The output of the algorithm is the average proportion of sentences that act as judgments, along with the average number of judgments in each document. The algorithm split each document into sentence segments and word tokens. POS tagging was used on the word tokens to enable the identification of nouns, adjectives, and adverbs, the core components of a judgment. Our algorithm used the POS tagging results to flag a combination of a noun, `to be' verb, and adjective or adverb in a sentence. The three components were required to be located in that order to be considered a match, which is an added constraint from the previous analysis.  
 
 The number of flagged sentences divided by the total number of sentences was calculated for each document. This value was averaged for each document in the bin to generate the final judgment percentage signal.
 
@@ -176,7 +168,7 @@ SD(w_{i}) = \sum_{k=1}^{1000} \frac{<c_{ik},c_{i(k+1)}>}{||c_{ik}||*||c_{i(k+1)}
 To determine the effect of the hyperparameters on average context vector cosine similarity, and in turn prediction, the co-occurrence window length and the context window length were varied. Section~\ref{optimization} discusses the optimization of these parameters.
 
 \subsection{Network Quantification}
-\label{subsec:network}
+\label{subsect:network}
 
 Utilizing the distributional semantic matrix, $D$, developed with the method described in the prior section, we created a graph to estimate semantic density using the igraph package in python \cite{Csardi2006}. We did this by assigning the words within a corpus as nodes and weighting the edges based on the cosine similarity of the word pairs. An algorithm was constructed to extract properties of this graph. First an adjacency matrix was defined by considering two nodes connected if they were below a threshold degree for the network adjacency angle.  The choice of threshold is discussed in Section~\ref{optimization}.
 
@@ -199,7 +191,7 @@ Context Window size, $r$, was also analyzed to determine the optimal value. In c
 \subsection{Network Adjacency Angle}
 \label{sect:angle}
 
-Finally, the network adjacency angle threshold was optimized. As discussed in Subsection~\ref{subsec:network} the network adjacency angle threshold was used to assign connections between nodes in a graph. Nodes, representing words, whose cosine angle was below the threshold, which in turn indicates similar word usage, were connected in the adjacency matrix. This graph was then used to calculate eigenvector centrality for each keyword. Any given threshold for connectivity between nodes could over or under estimate the relationship of words in the graph. This threshold can significantly impact the accuracy of estimates of word usage variability. The optimal threshold value was determined by varying the network angle by 15 degree increments over the range of 15 to 75 and selecting the parameter that most improved model performance.
+Finally, the network adjacency angle threshold was optimized. As discussed in Subsection~\ref{subsect:network} the network adjacency angle threshold was used to assign connections between nodes in a graph. Nodes, representing words, whose cosine angle was below the threshold, which in turn indicates similar word usage, were connected in the adjacency matrix. This graph was then used to calculate eigenvector centrality for each keyword. Any given threshold for connectivity between nodes could over or under estimate the relationship of words in the graph. This threshold can significantly impact the accuracy of estimates of word usage variability. The optimal threshold value was determined by varying the network angle by 15 degree increments over the range of 15 to 75 and selecting the parameter that most improved model performance.
 
 \section{Results}
 \label{results}
@@ -241,15 +233,7 @@ combination of network angle threshold, co-occurrence window size, and context v
 within the search space that displays a visually discernible separation or
 trend between the output eigenvector centrality and the group rank. Hence, none of the configurations produce separable results. As this metric is determined through the selection of keywords, it appears that a different methodology is needed.
 
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width = \textwidth]{figs/multipleAVGEVC}
-\caption{Average Eigenvector Centrality vs. Hyperparameters}
-\label{fig:multipleAVGEVC}
-\end{center}
-\end{figure}
-
-With the performative-based signals we used support vector machine regression (SVM-R) and random forest regression to score the linguistic flexibility of the groups. Both methods can handle the bounded continuous response variable, as well as nonlinear input relations. In \cite{venuti2016} these methods also outperformed the neural networks and logistic regression.
+With the performative-based signals we used support vector machine regression (SVM-R) and random forest regression to score the linguistic flexibility of the groups. Both methods can handle the bounded continuous response variable, as well as nonlinear input relations. In \newcite{venuti2016} these methods also outperformed the neural networks and logistic regression.
 
 We calculated model performance given an allowed error margin of 1, as shown in Eq. \ref{eq:acc 1} and Eq. \ref{eq:acc 2}, to account for the natural fluctuations in linguistic flexibility.
 
@@ -267,6 +251,17 @@ acc(bin, model) =
 acc(model) = \frac{1}{|bins|} \sum_{bin  \epsilon  bins} acc(bin, model)
 \end{equation}
 
+[ Insert Section about the Accuracy 2D Graphs]
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width = .9\textwidth,keepaspectratio]{figs/RF_SVM_accuracy}
+\caption{Model Performance: (a) RF (b) SVM}
+\label{fig:multipleAVGSD}
+\end{center}
+\end{figure}
+
+
 Table \ref{tab:accuracy} shows the increase in accuracy from the  improved implementations of the signal processing algorithms in this paper (Section \ref{signals}) versus the results reported in \cite{venuti2016}. These results come from three-fold cross-validation. The random forest regression shows the most improvement. These results are important because they provide additional evidence obtained with an enlarged data set that performative-based signals from religious text can predict tolerance. 
 
 \begin{table}[ht]
@@ -283,52 +278,6 @@ RF- R 	& 86\% & 92\% \\
 \end{table}%
  
 The results given here come from three-fold cross-validation with mean absolute error (MAE) to compare optimal hyper-parameter settings for the two modeling approaches. MAE was chosen as the optimization parameter since it provides a robust assessment of performance. Table \ref{tab:svm} shows the accuracies for the top five configurations found from the cross-validation testing for SVM. Similarly, Table \ref{tab:rf} shows  the accuracies for the top five configurations found from the cross-validation testing for random forest.
-
-
-\begin{table}[ht]
-\caption{SVM Accuracy Over Hyperparameter Ranges}
-\begin{center}
-\begin{tabular}{cccrr}
- \hline	 	Co-Occurrence Window & Context Vector Window & Network Angle & Accuracy & MAE \\ \hline
-
-5 & 6 & 30 & 85.85\% & 4.4641E-01 \\ \hline
-
-5 & 5 & 30 & 85.85\% & 4.4899E-01 \\ \hline
-
-6 & 6 & 30 & 84.91\% & 4.5097E-01 \\ \hline
-
-6 & 3 & 45 & 84.91\% & 4.5144E-01 \\ \hline
-
-6 & 6 & 45 & 84.91\% & 4.5194E-01 \\ \hline
-
-6 & 5 & 30 & 84.91\% & 4.5298E-01 \\ \hline
-
-\end{tabular}
-\end{center}
-\label{tab:svm}
-\end{table}%
-
-\begin{table}[ht]
-\caption{Random Forest Accuracy Over Hyperparameter Ranges}
-\begin{center}
-\begin{tabular}{cccrr}
-\hline
-Co-Occurrence Window & Context Vector Window & Network Angle & Accuracy & MAE \\ \hline
-
-2 & 2 & 75 & 92.45\% & 3.0849E-01 \\ \hline
-
-3 & 3 & 60 & 91.51\% & 3.1038E-01 \\ \hline
-
-3 & 2 & 60 & 90.57\% & 3.1226E-01 \\ \hline
-
-2 & 2 & 60 & 91.51\% & 3.1321E-01 \\ \hline
-
-3 & 2 & 45 & 91.51\% & 3.1698E-01 \\ \hline
-\end{tabular}
-\end{center}
-\label{tab:rf}
-\end{table}%
-
 
 As seen in Table \ref{tab:rf}  random forest regression achieve the highest accuracy with a co-occurrence window of 2, a context vector window of 2 and a network angle of 75. Also of relevance to these results, the calculation of co-occurrence and context vectors has lower computational costs with smaller window sizes. Similarly, a smaller network adjacency angle threshold has lower computational cost. With this in mind one may  consider to use the random forest configuration of a co-occurrence window of 2, and context vector window of 2 and a network angle of 60, as it would yield nearly identical prediction with less computational load. 
 
