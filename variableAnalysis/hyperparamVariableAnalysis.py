@@ -116,7 +116,7 @@ if os.path.exists(rawPath+'resultMedians.csv') ==False:
 #######################################
 medianDF=pd.read_csv(rawPath+'resultMedians.csv')
 
-#Plot side by side 
+#Plot side by side results scatter plots
 fig = plt.figure(figsize=(12,6))
 
 
@@ -210,11 +210,63 @@ smallDF=addRank(smallDF)
 
 
 
-#Average Semantic Density verus Co-Occurrence and Coco Window
-surface3D(smallDF,'coco','cv','avgSD','Co-Occurrence Window','Context Vector Window', 'Average Semantic Density','Average Semantic Density versus Hyperparameters',plt.cm.Greens,True)
+#Average Semantic Density verus Co-Occurrence and Coco Window side by side
+
+fig = plt.figure(figsize=(14,6))
+df=smallDF
+x='coco'
+y='cv'
+z='avgSD'
+xTitle='Co-Occurrence Window'
+yTitle='Context Vector Window'
+zTitle='Average Semantic Density'
+plotTitle='Average Semantic Density versus Hyperparameters'
+colorsMap=plt.cm.Greens
+ax = fig.add_subplot(1, 2, 1,projection='3d')
+x1 = np.linspace(df[x].min(), df[x].max(), len(df[x].unique()))
+y1 = np.linspace(df[y].min(), df[y].max(), len(df[y].unique()))
+x2, y2 = np.meshgrid(x1, y1)
+z2 = griddata((df[x], df[y]), df[z], (x2, y2), method='cubic')
+
+surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=colorsMap,
+    linewidth=0, antialiased=False)
+ax.set_xlabel(xTitle)
+ax.set_ylabel(yTitle)
+ax.set_zlabel(zTitle)
+
+fig.colorbar(surf, shrink=0.5, aspect=5)
+plt.title(plotTitle)
+
+
+df=smallDF
+x='netAng'
+y='coco'
+z='avgEVC'
+xTitle='Network Angle'
+yTitle='Co-Occurence Window'
+zTitle='Average Eigenvector Centrality'
+plotTitle='Average Eigenvector Centrality versus Hyperparameters'
+colorsMap=plt.cm.Greens
+ax = fig.add_subplot(1, 2, 2,projection='3d')
+x1 = np.linspace(df[x].min(), df[x].max(), len(df[x].unique()))
+y1 = np.linspace(df[y].min(), df[y].max(), len(df[y].unique()))
+x2, y2 = np.meshgrid(x1, y1)
+z2 = griddata((df[x], df[y]), df[z], (x2, y2), method='cubic')
+
+surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=colorsMap,
+    linewidth=0, antialiased=False)
+ax.set_xlabel(xTitle)
+ax.set_ylabel(yTitle)
+ax.set_zlabel(zTitle)
+
+fig.colorbar(surf, shrink=0.5, aspect=5)
+plt.title(plotTitle)
+
+#Average Semantic Density verus Co-Occurrence and Coco Window individual
+surface3D(smallDF,'coco','cv','avgSD','Co-Occurrence Window','Context Vector Window', 'Average Semantic Density','Average Semantic Density versus Hyperparameters',plt.cm.Greens)
 
 #Average Eigenvector Centrality versus Network Angle and Coco Window
-surface3D(smallDF,'netAng','coco','avgEVC','Network Angle','Co-Occurrence Window', 'Average Eigenvector Centrality','Average Eigenvector Centrality versus Hyperparameters',plt.cm.Greens,True)
+surface3D(smallDF,'netAng','coco','avgEVC','Network Angle','Co-Occurrence Window', 'Average Eigenvector Centrality','Average Eigenvector Centrality versus Hyperparameters',plt.cm.Greens)
 
 
 #Semantic Density versus rank 1 graphic
