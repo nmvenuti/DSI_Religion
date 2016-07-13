@@ -88,7 +88,7 @@ Because religious violence is a far-reaching and complex problem, many resources
 
 Another thread of research has focused on word usage or the performative characteristics in religious language as signaling intentions. Early work by  \newcite{Barsalou1993} showed that shifts in definitions correlate with the representational flexibility of a concept. Later work by \newcite{Sagi2009} has found that a “diversity of contexts” directly correlates with the performative characteristics of words. Their results have influenced this work and Section~\ref{signals} describes the use of their dimensionality reduction threshold.
 
-At a more detailed level, \newcite{Bullinaria2007} evaluated the impact of stop-lists, word stemming, and singular value decomposition (SVD) on the performance of word-word co-occurrence statistics by comparing performance with several generic semantic tasks. They determined that neither word stop-lists nor word stemming significantly impacted performance, minimal context window size gave the best performance, and dimensionality reduction through SVD can improve performance.  
+At a more detailed level, \newcite{Bullinaria2012} evaluated the impact of stop-lists, word stemming, and singular value decomposition (SVD) on the performance of word-word co-occurrence statistics by comparing performance with several generic semantic tasks. They determined that neither word stop-lists nor word stemming significantly impacted performance, minimal context window size gave the best performance, and dimensionality reduction through SVD can improve performance.  
 
 \newcite{Boussidan2011} used a graph built from subsetted co-occurrence tables to create a map of lexical usages of words. Finding the cliques in this graph has interesting results but the computational complexity of computing cliques limits the scalability of this method. \newcite{Cook2010} used a similar approach to detect `amelioration' (a word losing a negative meaning) and `pejoration.' 
 
@@ -123,11 +123,11 @@ To balance the requirements for increased observations for modeling and the text
 
 We normalized and cleaned all the documents prior to signal development to ensure data continuity between each algorithm. We extracted the raw text for each bin, tokenized,  and normalized the text by removing punctuation, converting to lowercase, and converting all numbers to a single symbol. The tokens were stemmed, but stopwords were not removed. These tokens served as the inputs for all signals with the exception of the judgement algorithm.
 
-To identify keywords for the analysis, we applied the Maxent POS Tagger from the python nltk package  to the corpus in order to develop the list of keywords which were used as input to the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsect:network}) \cite{loper2002}. Word counts were generated for each unique word/POS tag combination for each bin. The top 10 most frequent adjectives and adverbs were selected for each bin and used to as the keywords. These keywords were then fed into the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsect:network}). 
+To identify keywords for the analysis, we applied the Maxent POS Tagger from the python nltk package to the corpus \cite{loper2002}. Word counts were generated for each unique word/POS tag combination for each bin. The top 10 most frequent adjectives and adverbs were selected for each bin and used to as the keywords. These keywords were then fed into the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsect:network}). 
 
 \section{Signals}\label{signals}
 
-Building on the work in \newcite{venuti2016} we constructed four signals as input to the ranking model; context vectors similarity, judgement fractions, document sentiment, and network quantification. Significant modifications were made to the judgement and sentiment algorithms to better model the requisite features and to provide more normalized outputs. These methods were also reimplemented to computation times and add greater modeling flexibility. The algorithms for the computation of each signal as implemented in this study are described in the following subsections.
+Building on the work in \newcite{venuti2016} we constructed four signals as input to the ranking model; context vectors similarity, judgement fractions, document sentiment, and network quantification. Significant modifications were made to the judgement and sentiment algorithms to better model the requisite features and to provide more normalized outputs. These methods were also reimplemented to reduce computation times and add greater modeling flexibility. The algorithms for the computation of each signal as implemented in this study are described in the following subsections.
 
 \subsection{Sentiment}
 
@@ -137,20 +137,20 @@ The sentiment of each document was determined by the greater value of word match
 
 \subsection{Judgment Numbers}\label{subsec:judgment}
 
-To quantify the judgments signal, the CLDS team utilized a custom algorithm in conjunction with a Maxent POS tagger to identify judgments in text through syntactic parsing ~\cite{Hornik2011}. The output of the algorithm is the average proportion of sentences that act as judgments, along with the average number of judgments in each document. The algorithm split each document into sentence segments and word tokens. POS tagging was used on the word tokens to enable the identification of nouns, adjectives, and adverbs, the core components of a judgment. Our algorithm used the POS tagging results to flag a combination of a noun, `to be' verb, and adjective or adverb in a sentence. The three components were required to be located in that order to be considered a match, which is an added constraint from the previous analysis.  
+To quantify the judgments signal, the CLDS team utilized a custom algorithm in conjunction with a Maxent POS tagger to identify judgments in text through syntactic parsing ~\cite{Hornik2011}. The output of the algorithm is the average proportion of sentences that act as judgments, along with the average number of judgments in each document. The algorithm split each document into sentence segments and word tokens. POS tagging was used on the word tokens to enable the identification of nouns, adjectives, and adverbs. Our algorithm used the POS tagging results to flag a combination of a noun, `to be' verb, and adjective or adverb, the core components of a judgment, in a sentence. The three components were required to be located in that order to be considered a match, which is an added constraint from the previous analysis.  
 
 The number of flagged sentences divided by the total number of sentences was calculated for each document. This value was averaged for each document in the bin to generate the final judgment percentage signal.
 
 \subsection{Context Vectors}
 \label{subsect:contextvectors}
 
-To capture the variations in linguistic flexibility of keywords within religious discourse, we implemented a context vector semantic density algorithm in python based on research by Sagi et al. 
+To capture the variations in linguistic flexibility of keywords within religious discourse, we implemented a context vector semantic density algorithm in python based on research by \newcite{Sagi2009}. 
 
-Using the pre-processed tokens as described in the data section above, a co-occurrence matrix, $X = [x_{ij}]$ was constructed with $i,j \in \{1,2,\ldots, v\}$, where $v$ is the size of the vocabulary. The $x_{ij}$ elements of $X$ capture how often each word appeared with other words in the vocabulary. This was done by iterating over each word in the bin and counting the words within a $\pm k$ sized window of the bin work. The result of this was a hashmap containing the full set of words with a count of the times each the other words in the vocabulary occurred within a \textit{k}-sized window of it.  
+Using the pre-processed tokens as described in the data section above, a co-occurrence matrix, $X = [x_{ij}]$ was constructed with $i,j \in \{1,2,\ldots, v\}$, where $v$ is the size of the vocabulary. The $x_{ij}$ elements of $X$ capture how often each word appeared with other words in the vocabulary. This was done by iterating over each word in the bin and counting the words within a $\pm k$ sized window. The result of this was a vector containing the number of times each the other words in the vocabulary occurred within a \textit{k}-sized window of that word.  
 
-Once the co-occurrence matrix, $X$, was constructed, a distributional semantic matrix, $D$, was developed to reduce the computational load. $D$ was obtained from $X$ using truncated SVD. This reduces the column space of $D$ to 100 components which matches the value used by \newcite{Sagi2009}. 
+Once the co-occurrence matrix, $X$, was constructed, a distributional semantic matrix, $D$, was developed to reduce the computational load. $D$ was obtained from $X$ using truncated SVD. This reduced the column space of $D$ to 50 components. 
 
-Next, context vectors were created from $D$. The context vectors for each target bin word were developed by extracting the words within an \textit{r}-sized window surrounding the target bin word and summing the rows of $D$ for the words within the window.  Specifically, let $w_{ij}$ represent the $j$ occurrence of target bin word $i$. So the context vector for this word, $c_{ij}$, is given by 
+Next, context vectors were created from $D$. The context vectors for each keyword in the bin were developed by extracting the words within an \textit{r}-sized window surrounding the target and summing the rows of $D$ for the words within the window.  Specifically, let $w_{ij}$ represent the $j$ occurrence of target $i$. So the context vector for this word, $c_{ij}$, is given by 
 
 \begin{equation*}
 \label{eq:dsm}
@@ -159,10 +159,10 @@ c_{ij}=\sum_{h \in (w_{ij})_{\pm r}} D_{h}
 
 \noindent where $D_{h}$ is  row $h$ of $D$ and $(w_{ij})_{\pm r}$ is the window of size $r$ around word, $w_{ij}$. 
 
-To calculate the semantic density for each target bin word, we began with the context vectors. We then estimated the average cosine similarity of all the context vectors for that word by randomly sampling 2 context vectors from the set and calculating the cosine similarity between them. This was performed over $n=1000$ iterations. The resulting values were averaged to produce the semantic density, $SD$ for that target word as shown below.
+To calculate the semantic density for each target bin word, we began with the context vectors. We then estimated the average cosine similarity of all the context vectors for that word by randomly sampling 2 context vectors from the set and calculating the cosine similarity between them. This was performed over $n=1000$ iterations. The resulting values were averaged to produce the semantic density, $SD$, for that target word as shown below.
 
 \begin{equation*}
-SD(w_{i}) = \sum_{k=1}^{1000} \frac{<c_{ik},c_{i(k+1)}>}{||c_{ik}||*||c_{i(k+1)}||}
+SD(w_{i}) = \frac{1}{n}\sum_{k=1}^{n} \frac{<c_{ik},c_{i(k+1)}>}{||c_{ik}||*||c_{i(k+1)}||}
 \end{equation*}
 
 To determine the effect of the hyperparameters on average context vector cosine similarity, and in turn prediction, the co-occurrence window length and the context window length were varied. Section~\ref{optimization} discusses the optimization of these parameters.
@@ -170,7 +170,7 @@ To determine the effect of the hyperparameters on average context vector cosine 
 \subsection{Network Quantification}
 \label{subsect:network}
 
-Utilizing the distributional semantic matrix, $D$, developed with the method described in the prior section, we created a graph to estimate semantic density using the igraph package in python \cite{Csardi2006}. We did this by assigning the words within a corpus as nodes and weighting the edges based on the cosine similarity of the word pairs. An algorithm was constructed to extract properties of this graph. First an adjacency matrix was defined by considering two nodes connected if they were below a threshold degree for the network adjacency angle.  The choice of threshold is discussed in Section~\ref{optimization}.
+Utilizing the distributional semantic matrix, $D$, we created a graph to estimate semantic density using the igraph package in python \cite{Csardi2006}. This was done by first creating a $v$-$v$ adjacency matrix by computing the cosine similarity of each row $h$ in $D$. Values in this matrix were converted to 0 or 1 based on if they were above or below the determined network adjacency angle threshold, respectively. This matrix was then used to create a graph where a node represents a word and an edge was assigned between two nodes if the associated value in the adjacency matrix was 1. The choice of threshold is discussed in Section~\ref{optimization}.
 
 This graph was then used to calculate eigenvector centrality. Eigenvector centrality scores the influence of a network on a node by looking at the number of influential nodes to which it is connected \cite{Estrada2005}. This number of connected nodes was used as a proxy for the linguistic flexibility of a word. The more varied the connection the higher number of uses of that word.
 
@@ -186,19 +186,19 @@ The first parameter selected for optimization was the co-occurrence window, $k$.
 \subsection{Context Window}
 \label{sect:context window}
 
-Context Window size, $r$, was also analyzed to determine the optimal value. In contrast to the co-occurrence window which measures general word usage, the context window size impacts the specific measure of a word’s usage. Without knowledge of how the proximity of a word affects the analysis of the variability of its usage, we sought to vary the window size from 2 to 6 to determine the window size with the best predictive performance.
+Context Window size, $r$, was also analyzed to determine the optimal value. In contrast to the co-occurrence window which measures general word usage, the context window size impacts the specific measure of a word's usage. Without knowledge of how the proximity of a word affects the analysis of the variability of its usage, we varied the window size from 2 to 6 to determine the window size with the best predictive performance.
 
 \subsection{Network Adjacency Angle}
 \label{sect:angle}
 
-Finally, the network adjacency angle threshold was optimized. As discussed in Subsection~\ref{subsect:network} the network adjacency angle threshold was used to assign connections between nodes in a graph. Nodes, representing words, whose cosine angle was below the threshold, which in turn indicates similar word usage, were connected in the adjacency matrix. This graph was then used to calculate eigenvector centrality for each keyword. Any given threshold for connectivity between nodes could over or under estimate the relationship of words in the graph. This threshold can significantly impact the accuracy of estimates of word usage variability. The optimal threshold value was determined by varying the network angle by 15 degree increments over the range of 15 to 75 and selecting the parameter that most improved model performance.
+Finally, the network adjacency angle threshold was optimized. As discussed in Subsection~\ref{subsect:network} the network adjacency angle threshold was used to assign connections between nodes in a graph.  This threshold can significantly impact the accuracy of estimates of word usage variability. This is due to the fact that an inaccurate value of network adjacency angle could over or under estimate the relationship of words in the graph. To investigate this the threshold value was varied by 15 degree increments over the range of 15 to 75 and the optimal parameter value was determined by that which most improved model performance.
 
 \section{Results}
 \label{results}
 
 To evaluate the effects of the hyperparameters on the semantic density and network signals, we conducted a grid search of the co-occurrence window, the context window and the network adjacency angle. By varying these parameters we sought to better understand the effects of these parameters on the linguistic signals and also to understand how these signals map to the linguistic flexibility of the  groups. 
 
-As shown in Figure \ref{fig:SD_surface} the average semantic density of the groups was mapped to the co-occurrence  and context vector window sizes. By plotting the average semantic density in relation to  co-occurrence window ranges of 2-6 and context window ranges of 2-6, Figure \ref{fig:SD_surface} shows that an increase of these window sizes results in an increase of the average semantic density of the keywords. These results have an intuitive explanation. Increasing these window ranges allows for greater information to be held in the context vectors and, in turn, results in a cosine similarity closer to one. This figure also shows that a limit is reached at a co-occurrence window of 5 and a context vector window of 5, where the average semantic density settles just above an average cosine similarity of 0.75. This indicates that little gain can be achieved by increasing these window sizes further, as there would be little distinction in the average semantic density of the keywords in the analysis.
+As shown in Figure \ref{fig:SD_surface} the average semantic density of the groups was plotted against to the co-occurrence  and context vector window sizes. By plotting the average semantic density in relation to  co-occurrence window ranges of 2-6 and context window ranges of 2-6, Figure \ref{fig:SD_surface} shows that an increase of these window sizes results in an increase of the average semantic density of the keywords. These results have an intuitive explanation. Increasing these window ranges allows for greater information to be held in the context vectors and, in turn, results in a cosine similarity closer to one. This figure also shows that a limit is reached at a co-occurrence window of 5 and a context vector window of 5, where the average semantic density settles just above an average cosine similarity of 0.75. This indicates that little gain can be achieved by increasing these window sizes further, as there would be little distinction in the average semantic density of the keywords in the analysis.
 
 \begin{figure}[h]
 \begin{center}
@@ -208,7 +208,7 @@ As shown in Figure \ref{fig:SD_surface} the average semantic density of the grou
 \end{center}
 \end{figure}
 
-Next in Figure \ref{fig:EVC_surface} the co-occurrence window size and network angle are plotted against the average eigenvector centrality.  The average eigenvector centrality trends upward as the co-occurrence window size increases and the network adjacency angle decreases. These results also have intuitive explanations. An increase in the co-occurrence window size results in a greater connection between the words within the discourse, and the lower adjacency angle produces more edges between the nodes within the graphs. As eigenvector centrality is a bounded variable between 0 and 1, we see that the limit of 1 is nearly reached under the maximal conditions of 30 degrees and a co-occurrence window size of 6. We hypothesize that this limit would be achieved by increasing the co-occurrence window or decreasing the network angle further.
+Next in Figure \ref{fig:EVC_surface} the co-occurrence window size and network angle are plotted against the average eigenvector centrality.  The average eigenvector centrality trends upward as the co-occurrence window size increases and the network adjacency angle decreases. These results also have intuitive explanations. An increase in the co-occurrence window size results in a greater connection between the words within the discourse, and the lower adjacency angle produces more edges between the nodes within the graphs. As eigenvector centrality is a bounded variable between 0 and 1, we see that the limit of 1 is nearly reached under the maximal conditions of 30 degrees and a co-occurrence window size of 6. We anticipate that this limit would be achieved by increasing the co-occurrence window or decreasing the network angle further.
 
 \begin{figure}[h]
 \begin{center}
@@ -233,7 +233,7 @@ combination of network angle threshold, co-occurrence window size, and context v
 within the search space that displays a visually discernible separation or
 trend between the output eigenvector centrality and the group rank. Hence, none of the configurations produce separable results. As this metric is determined through the selection of keywords, it appears that a different methodology is needed.
 
-With the performative-based signals we used support vector machine regression (SVM-R) and random forest regression to score the linguistic flexibility of the groups. Both methods can handle the bounded continuous response variable, as well as nonlinear input relations. In \newcite{venuti2016} these methods also outperformed the neural networks and logistic regression.
+With the performative-based signals we used support vector machine regression (SVM-R) and random forest regression to score the linguistic flexibility of the groups. Both methods can handle the bounded continuous response variable, as well as nonlinear input relations. In \newcite{venuti2016} these methods also outperformed the neural networks.
 
 We calculated model performance given an allowed error margin of 1, as shown in Eq. \ref{eq:acc 1} and Eq. \ref{eq:acc 2}, to account for the natural fluctuations in linguistic flexibility.
 
@@ -262,7 +262,7 @@ acc(model) = \frac{1}{|bins|} \sum_{bin  \epsilon  bins} acc(bin, model)
 \end{figure}
 
 
-Table \ref{tab:accuracy} shows the increase in accuracy from the  improved implementations of the signal processing algorithms in this paper (Section \ref{signals}) versus the results reported in \cite{venuti2016}. These results come from three-fold cross-validation. The random forest regression shows the most improvement. These results are important because they provide additional evidence obtained with an enlarged data set that performative-based signals from religious text can predict tolerance. 
+Table \ref{tab:accuracy} shows the increase in accuracy from the  improved implementations of the signal processing algorithms in this paper (Section \ref{signals}) versus the results reported in \newcite{venuti2016}. These results come from three-fold cross-validation. The random forest regression shows the most improvement. These results are important because they provide additional evidence obtained with an enlarged data set that performative-based signals from religious text can predict tolerance. 
 
 \begin{table}[ht]
 \caption{Accuracy Comparison for Signal Processing}
@@ -277,12 +277,6 @@ RF- R 	& 86\% & 92\% \\
 \label{tab:accuracy}
 \end{table}%
  
-The results given here come from three-fold cross-validation with mean absolute error (MAE) to compare optimal hyper-parameter settings for the two modeling approaches. MAE was chosen as the optimization parameter since it provides a robust assessment of performance. Table \ref{tab:svm} shows the accuracies for the top five configurations found from the cross-validation testing for SVM. Similarly, Table \ref{tab:rf} shows  the accuracies for the top five configurations found from the cross-validation testing for random forest.
-
-As seen in Table \ref{tab:rf}  random forest regression achieve the highest accuracy with a co-occurrence window of 2, a context vector window of 2 and a network angle of 75. Also of relevance to these results, the calculation of co-occurrence and context vectors has lower computational costs with smaller window sizes. Similarly, a smaller network adjacency angle threshold has lower computational cost. With this in mind one may  consider to use the random forest configuration of a co-occurrence window of 2, and context vector window of 2 and a network angle of 60, as it would yield nearly identical prediction with less computational load. 
-
-For the SVM-R the optimal configuration was a co-occurrence window of 5, a context vector window of 6 and a network angle of 30 degrees. Under these optimal conditions both the SVM-R andr random forest regression outperformed the previous models whose prediction accuracies were 84\% and 86\%, respectively. It is important to note that due to the increase in data, and slight updates to the judgement and sentiment algorithms, it is difficult to perform a one to one comparison of the lift provided in this analysis. Under both these configurations, it appears that the random forest regression is the optimal model for this analysis, as it provides roughly a 6\% lift in accuracy.
-
 \section{Conclusions}
 \label{conclusions}
 
