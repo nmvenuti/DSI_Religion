@@ -38,23 +38,135 @@ def addRank(signalDF):
     signalDF=signalDF.merge(groupRankDF, on='groupName')
     return(signalDF)
 
+def scatter3d(x,y,z,xTitle,yTitle,zTitle,colorTitle, cs, colorsMap='gray_r',saveFig=False):
+    cm = plt.get_cmap(colorsMap)
+    cNorm = matplotlib.colors.Normalize(vmin=min(cs), vmax=max(cs))
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.scatter(x, y, z, c=scalarMap.to_rgba(cs))
+    ax.set_xlabel(xTitle)
+    ax.set_ylabel(yTitle)
+    ax.set_zlabel(zTitle)
+    scalarMap.set_array(cs)
+    cbar=fig.colorbar(scalarMap)
+    cbar.set_label(colorTitle)
+    if saveFig:
+        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+zTitle+'.png',bbox_inches='tight')  # save the figure to file  
+
+#Density curve
+def surface3D(df,x,y,z,xTitle,yTitle,zTitle,plotTitle,colorsMap='gray_r',saveFig=False):
+    # re-create the 2D-arrays
+    x1 = np.linspace(df[x].min(), df[x].max(), len(df[x].unique()))
+    y1 = np.linspace(df[y].min(), df[y].max(), len(df[y].unique()))
+    x2, y2 = np.meshgrid(x1, y1)
+    z2 = griddata((df[x], df[y]), df[z], (x2, y2), method='cubic')
+    
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=colorsMap,
+        linewidth=0, antialiased=False)
+    ax.set_xlabel(xTitle)
+    ax.set_ylabel(yTitle)
+    ax.set_zlabel(zTitle)
+    
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+    plt.title(plotTitle)
+    if saveFig:
+        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+plotTitle+'.png',bbox_inches='tight')   # save the figure to file   
+
+def scatter2d(x,y,xTitle,yTitle,colorTitle, cs, colorsMap='gray_r',saveFig=False):
+    cm = plt.get_cmap(colorsMap)
+    cNorm = matplotlib.colors.Normalize(vmin=min(cs), vmax=max(cs))
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
+    fig=plt.figure()
+    plt.plot(x, y, c=scalarMap.to_rgba(cs))
+    plt.xlabel(xTitle)
+    plt.ylabel(yTitle)
+    scalarMap.set_array(cs)
+    cbar=fig.colorbar(scalarMap)
+    cbar.set_label(colorTitle)
+    if saveFig:
+        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+colorTitle+'.png',bbox_inches='tight')  # save the figure to file  
+
+
+
 #Define data filepath
 rawPath='./github/nmvenuti/DSI_Religion/pythonOutput/run1/cleanedOutput'
+
+
 
 ###################################################
 ###Pull in data to generate median summary files###
 ###################################################
+if os.path.exists(rawPath+'resultMedians.csv') ==False:
+    resultsDF=pd.read_csv(rawPath+'-summaryOutput-full.csv')
+    resultsDF.drop('Unnamed: 0',axis=1, inplace=True)
+    testDF=resultsDF[['cocowindow','startCount','netAngle','cvWindow','rfAccuracy','rfMae','svmAccuracy','svmMae']].groupby(['cocowindow','startCount','netAngle','cvWindow']).median().reset_index()
+    testDF.to_csv(rawPath+'resultMedians.csv')
+    
+    #Top 10 random forest medians
+    testDF.sort('rfAccuracy',ascending=True).head(n=10).to_csv(rawPath+'bestRF-mae.csv')
+    
+    #Top 10 SVM medians
+    testDF.sort('svmAccuracy',ascending=True).head(n=10).to_csv(rawPath+'bestSVM-mae.csv')
 
-resultsDF=pd.read_csv(rawPath+'-summaryOutput-full.csv')
-resultsDF.drop('Unnamed: 0',axis=1, inplace=True)
-testDF=resultsDF[['cocowindow','startCount','netAngle','cvWindow','rfAccuracy','rfMae','svmAccuracy','svmMae']].groupby(['cocowindow','startCount','netAngle','cvWindow']).median().reset_index()
-testDF.to_csv(rawPath+'resultMedians.csv')
+#######################################
+###Generate Median Accuracy Graphics###
+#######################################
+medianDF=pd.read_csv(rawPath+'resultMedians.csv')
 
-#Top 10 random forest medians
-testDF.sort('rfAccuracy',ascending=True).head(n=10).to_csv(rawPath+'bestRF-mae.csv')
+#Plot side by side 
+fig = plt.figure(figsize=(12,6))
 
-#Top 10 SVM medians
-testDF.sort('svmAccuracy',ascending=True).head(n=10).to_csv(rawPath+'bestSVM-mae.csv')
+
+a=np.array(medianDF['cocowindow'])
+b=np.array(medianDF['cvWindow'])
+cs=np.array(medianDF['rfAccuracy'])
+xTitle='Co-Occurrence Window'
+yTitle='Context Vector Window'
+colorTitle='Random Forest Accuracy'
+
+ax = fig.add_subplot(1, 2, 1)
+plt.scatter(a,b,s=60,c=cs*100,marker='o', cmap=plt.cm.Greens)
+plt.colorbar()
+plt.grid(True)
+plt.xlabel(xTitle)
+plt.ylabel(yTitle)
+plt.title(colorTitle)
+#plt.subplots_adjust(wspace=0, hspace=0)
+
+a=np.array(medianDF['cocowindow'])
+b=np.array(medianDF['cvWindow'])
+cs=np.array(medianDF['svmAccuracy'])
+xTitle='Co-Occurrence Window'
+yTitle='Context Vector Window'
+colorTitle='SVM-R Accuracy'
+ax = fig.add_subplot(1,2, 2)
+plt.scatter(a,b,s=60,c=cs*100,marker='o', cmap=plt.cm.Greens)
+plt.colorbar()
+plt.grid(True)
+plt.xlabel(xTitle)
+plt.ylabel(yTitle)
+plt.title(colorTitle)
+#plt.subplots_adjust(wspace=0, hspace=0)
+
+
+
+##Average Semantic Density verus Co-Occurrence and Coco Window
+#surface3D(medianDF,'cocowindow','cvWindow','rfAccuracy','Co-Occurrence Window','Context Vector Window', 'Random Forest Accuracy','Random Forest Accuracy versus Hyperparameters',plt.cm.coolwarm,True)
+#
+##Average Eigenvector Centrality versus Network Angle and Coco Window
+#surface3D(medianDF,'netAngle','cocowindow','rfAccuracy','Network Angle','Co-Occurrence Window', 'Random Forest Accuracy','Random Forest Accuracy versus Hyperparameters',plt.cm.coolwarm,True)
+#
+##Average Semantic Density verus Co-Occurrence and Coco Window
+#surface3D(medianDF,'cocowindow','cvWindow','svmAccuracy','Co-Occurrence Window','Context Vector Window', 'SVM-R Accuracy','SVM-R Accuracy versus Hyperparameters',plt.cm.coolwarm,True)
+#
+##Average Eigenvector Centrality versus Network Angle and Coco Window
+#surface3D(medianDF,'netAngle','cocowindow','svmAccuracy','Network Angle','Co-Occurrence Window', 'SVM-R Accuracy','SVM-R Accuracy versus Hyperparameters',plt.cm.coolwarm,True)
+
+
+
 
 ###########################################################
 ###Get outputs of files for visual analysis of variables###
@@ -98,68 +210,11 @@ smallDF=addRank(smallDF)
 
 
 
-
-#Plot variables based on parameters
-#Scatter
-def scatter3d(x,y,z,xTitle,yTitle,zTitle,colorTitle, cs, colorsMap='gray_r',saveFig=False):
-    cm = plt.get_cmap(colorsMap)
-    cNorm = matplotlib.colors.Normalize(vmin=min(cs), vmax=max(cs))
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.scatter(x, y, z, c=scalarMap.to_rgba(cs))
-    ax.set_xlabel(xTitle)
-    ax.set_ylabel(yTitle)
-    ax.set_zlabel(zTitle)
-#    ax.w_xaxis.gridlines.set_lw(3.0)
-#    ax.w_yaxis.gridlines.set_lw(3.0)
-#    ax.w_zaxis.gridlines.set_lw(3.0)
-    scalarMap.set_array(cs)
-    cbar=fig.colorbar(scalarMap)
-    cbar.set_label(colorTitle)
-    if saveFig:
-        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+zTitle+'.png',bbox_inches='tight')  # save the figure to file  
-
-#x=np.array(totalDF['coco'])
-#y=np.array(totalDF['cv'])
-#z=np.array(totalDF['avgSD'])
-#c=np.array(totalDF['rank'])
-#scatter3d(x,y,z,'Co-Occurrence Window','cv','sd', 'rank', c)
-
-
-#Density curve
-def surface3D(df,x,y,z,xTitle,yTitle,zTitle,plotTitle,colorsMap='gray_r',saveFig=False):
-    # re-create the 2D-arrays
-    x1 = np.linspace(df[x].min(), df[x].max(), len(df[x].unique()))
-    y1 = np.linspace(df[y].min(), df[y].max(), len(df[y].unique()))
-    x2, y2 = np.meshgrid(x1, y1)
-    z2 = griddata((df[x], df[y]), df[z], (x2, y2), method='cubic')
-    
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    surf = ax.plot_surface(x2, y2, z2, rstride=1, cstride=1, cmap=colorsMap,
-        linewidth=0, antialiased=False)
-    ax.set_xlabel(xTitle)
-    ax.set_ylabel(yTitle)
-    ax.set_zlabel(zTitle)
-    #ax.set_zlim(-1.01, 1.01)
-    
-    #ax.zaxis.set_major_locator(LinearLocator(10))
-    #ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-    
-    fig.colorbar(surf, shrink=0.5, aspect=5)
-    plt.title(plotTitle)
-    if saveFig:
-        fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/'+plotTitle+'.png',bbox_inches='tight')   # save the figure to file   
-
-    # ~~~~ MODIFICATION TO EXAMPLE ENDS HERE ~~~~ #
-    
-#    plt.show()
 #Average Semantic Density verus Co-Occurrence and Coco Window
-surface3D(smallDF,'coco','cv','avgSD','Co-Occurrence Window','Context Vector Window', 'Average Semantic Density','Average Semantic Density versus Hyperparameters',plt.cm.coolwarm,True)
+surface3D(smallDF,'coco','cv','avgSD','Co-Occurrence Window','Context Vector Window', 'Average Semantic Density','Average Semantic Density versus Hyperparameters',plt.cm.Greens,True)
 
 #Average Eigenvector Centrality versus Network Angle and Coco Window
-surface3D(smallDF,'netAng','coco','avgEVC','Network Angle','Co-Occurrence Window', 'Average Eigenvector Centrality','Average Eigenvector Centrality versus Hyperparameters',plt.cm.coolwarm,True)
+surface3D(smallDF,'netAng','coco','avgEVC','Network Angle','Co-Occurrence Window', 'Average Eigenvector Centrality','Average Eigenvector Centrality versus Hyperparameters',plt.cm.Greens,True)
 
 
 #Semantic Density versus rank 1 graphic
@@ -167,7 +222,7 @@ x=np.array(smallDF['coco'])
 y=np.array(smallDF['cv'])
 z=np.array(smallDF['avgSD'])
 c=np.array(smallDF['rank'])
-scatter3d(x,y,z,'Co-Occurrence Window','Context Vector Window','Average Semantic Density', 'Rank', c,plt.cm.coolwarm,True)
+scatter3d(x,y,z,'Co-Occurrence Window','Context Vector Window','Average Semantic Density', 'Rank', c,plt.cm.Greens,True)
 
 #multiple graphics
 rankList=list(set(smallDF['rank']))
@@ -183,7 +238,7 @@ for i in range(len(rankList)):
 #    figX=np.mod(i,4)+1
     
     ax = fig.add_subplot(2, 4, i+1, projection='3d')
-    ax.scatter(x, y, z)
+    ax.scatter(x, y, z, c='green')
     ax.set_zlim(0,1.)
     ax.set_xlabel('Co-Occurrence Window')
     ax.set_ylabel('Context Vector Window')
@@ -191,7 +246,7 @@ for i in range(len(rankList)):
     pltTitle='Average Semantic Density- Rank '+str(rankList[i])
     plt.title(pltTitle)
     plt.subplots_adjust(wspace=0, hspace=0)
-#plt.show()
+plt.show()
 
 fig.savefig('./github/nmvenuti/DSI_Religion/variableAnalysis/outputs/scatterPlots/multipleAVGSD.png',bbox_inches='tight')
 
