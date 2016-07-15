@@ -120,13 +120,13 @@ Meher Baba				& 8 & Spiritualist	& 265 \\
 
 To balance the requirements for increased observations for modeling and the text size requirements for the semantic density algorithms, we randomly placed the documents into bins of 10 for each group. If any individual bin was smaller than half the targeted bin size (i.e., 5 documents), we discarded it so as to not introduce significant sample size disparities. For each group the bins were split into a training set containing 70\% of the bins and a testing set containing the remaining 30\%. 
 
-We normalized and cleaned all the documents prior to signal development to ensure data continuity between each algorithm. We extracted the raw text for each bin, tokenized,  and normalized the text by removing punctuation, converting to lowercase, and converting all numbers to a single symbol. The tokens were stemmed, but stopwords were not removed. These tokens served as the inputs for all signals with the exception of the judgement algorithm.
+We normalized and cleaned all the documents prior to signal development to ensure data continuity between each algorithm. We extracted the raw text for each bin, tokenized,  and normalized the text by removing punctuation, converting to lowercase, and converting all numbers to a single symbol. The tokens were stemmed, but stopwords were not removed. These tokens served as the inputs for all signals with the exception of the judgment algorithm.
 
 To identify keywords for the analysis, we applied the Maxent POS Tagger from the python nltk package to the corpus \cite{loper2002}. Word counts were generated for each unique word/POS tag combination for each bin. The top 10 most frequent adjectives and adverbs were selected for each bin and used to as the keywords. These keywords were then fed into the context vector (Subsection \ref{subsect:contextvectors}) and network quantification (Subsection \ref{subsect:network}). 
 
 \section{Signals}\label{signals}
 
-Building on the work in \newcite{venuti2016} we constructed four signals as input to the ranking model; context vectors similarity, judgement fractions, document sentiment, and network quantification. Significant modifications were made to the judgement and sentiment algorithms to better model the requisite features and to provide more normalized outputs. These methods were also reimplemented to reduce computation times and add greater modeling flexibility. The algorithms for the computation of each signal as implemented in this study are described in the following subsections.
+Building on the work in \newcite{venuti2016} we constructed four signals as input to the ranking model; context vectors similarity, judgment fractions, document sentiment, and network quantification. Significant modifications were made to the judgment and sentiment algorithms to better model the requisite features and to provide more normalized outputs. These methods were also reimplemented to reduce computation times and add greater modeling flexibility. The algorithms for the computation of each signal as implemented in this study are described in the following subsections.
 
 \subsection{Sentiment}
 
