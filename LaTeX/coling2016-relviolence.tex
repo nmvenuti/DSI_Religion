@@ -17,13 +17,13 @@
 %%e.agirre@ehu.es or Sergi.Balari@uab.es
 %% and that of ACL 08 by Joakim Nivre and Noah Smith
 
-\documentclass[11pt]{article}
+\documentclass[11pt, a4paper]{article}
 \usepackage{coling2016}
 \usepackage{times}
 \usepackage{url}
 \usepackage{latexsym}
 \usepackage{graphicx}
-\usepackage{amsmath}
+\usepackage{amsmath,amsfonts,amstext,amssymb,amsbsy,amsopn,amsthm,eucal}
 
 
 %\setlength\titlebox{5cm}
@@ -58,7 +58,8 @@
 \maketitle
 \begin{abstract}
 Religious violence is an important and complicated problem faced by many regions of the world today. The number of incidents has increased in recent years. To combat this problem requires scalable and accurate systems that can predict which groups are likely to engage in violence.
-Creating such systems is difficult because of factors such as lingual and cultural differences. These differences limit understanding of group tolerance or tendencies to violence. Recent work has provided a promising new approach to address this challenge by analyzing the performative character of discourse (how words are used) rather than using the semantic or emotive character of text (what the words mean or imply). In this paper we build upon previous work which describes computational approaches for text analysis that employed this performative perspective along with semantic signals to efficiently and effectively assess a group's tolerance or predilection to violence. This paper describes algorithmic updates to the previous approach, and provides a hyperparameter optimization to increase the prediction of the previous analysis. These changes increase the previous prediction yield of the prior analysis, and show that in unison performative and semantic signals in unison can be strong predictors of lingual flexibility of religious discourse.
+Creating such systems is difficult because of factors such as lingual and cultural differences. These differences limit understanding of group tolerance or tendencies to violence. Recent work has provided a promising new approach to address this challenge by analyzing the performative character of discourse (how words are used) rather than using the semantic or emotive character of text (what the words mean or imply). Results in this paper build on this performative approach.  These results derive from signal processing approaches for extracting word usage features from religious text to efficiently and effectively assess a group's tolerance or predilection to offensive behavior. In addition to improvements to  signal processing algorithms  for performative analysis the paper also describes hyperparameter optimization that can increase the accuracy in estimation of semantic density as well as the predictive accuracy of the lingual flexibility in group discourse. Taken together these results provide a foundation for future work to connect language to group behavior.  
+
 \end{abstract}
 
 \section{Introduction}\label{Intro}
@@ -76,11 +77,11 @@ Creating such systems is difficult because of factors such as lingual and cultur
     
 }
 
-Religious violence has long been one of the most destructive and divisive acts impacting society and, unfortunately, the loss of life and damage associated with these acts has been rising in recent years. In 2014 alone, 12,737 deaths were attributed to just two  radical religious groups: Boko Haram and the Islamic State of Iraq and the Levant (ISIL) \cite{Searcey2015}. Combating this problem requires scalable and accurate systems to predict which groups are likely to engage in violence \cite{Yang2010}. 
+Religious violence has long been one of the most destructive and divisive acts impacting society and, unfortunately, the loss of life and damage associated with these acts has been rising in recent years. In 2014 alone, 12,737 deaths were attributed to just two  radical religious groups: Boko Haram and the Islamic State of Iraq and the Levant (ISIL) \cite{Searcey2015}. Combating this problem requires scalable and accurate systems to predict which groups are likely to engage in violence. 
 
 Most approaches to predicting violent proclivity in groups use the literal or emotive attributes of keywords distributed by the semantic characteristics of these words. New work by  the Global Covenant of Religions Ethnolinguistics Research Team (GCR-ERT) has found that the performative character of discourse, the capacity for language to encapsulate an action or identity, is correlated to the level of intolerance within that discourse. To quantify the performative character of discourse, the GCR-ERT have developed a 1 - 9 language rigidity scale that is used to classify texts as either rigid (scored a 1) or elastic (scored a 9). These rankings are assigned manually by analyzing a wide array of characteristics within religious discourse.  Their work has shown that certain characteristics of discourse, such as the frequency of judgments and the rigidity of keyword contexts, can inform this quantification. 
 
-This paper describes computational methods to uncover and exploit the performative characteristics of religious discourse highlighted by the GCR-ERT.  The results here build on earlier work in developing algorithms for performative analysis by implementing more efficient algorithms for text analysis,  improving hyperparameter estimation and enlarging the number and variety of religious texts analyzed. Taken together the contributions in this paper provide a foundation for automated systems to uncover signals of tolerance or violence from the performative characteristics of religious language. The next section provides background on related research. Section~\ref{data} gives an overview of the data used in the analysis, Section~\ref{signals} describes the signals acquired by the performative approach, and Section~\ref{optimization} has the details on the methods for hyperparameter optimization. Finally, Section~\ref{results} shows the results from this work and Section~\ref{conclusions} gives conclusions and future directions.  
+This paper describes computational methods to uncover and exploit the performative characteristics of religious discourse highlighted by the GCR-ERT in tandem with traditonal semantic signals.  The results here build on earlier work in developing algorithms for performative analysis by implementing more efficient algorithms for text analysis,  improving hyperparameter estimation and enlarging the number and variety of religious texts analyzed. Taken together the contributions in this paper provide a foundation for automated systems to uncover signals of tolerance or violence from the performative characteristics of religious language. The next section provides background on related research. Section~\ref{data} gives an overview of the data used in the analysis, Section~\ref{signals} describes the signals acquired by the performative approach, and Section~\ref{optimization} has the details on the methods for hyperparameter optimization. Finally, Section~\ref{results} shows the results from this work and Section~\ref{conclusions} gives conclusions and future directions.  
 
 \section{Related Work}\label{relatedwork}
 
@@ -152,20 +153,20 @@ Once the co-occurrence matrix, $X$, was constructed, a distributional semantic m
 
 Next, context vectors were created from $D$. The context vectors for each keyword in the bin were developed by extracting the words within an \textit{r}-sized window surrounding the target and summing the rows of $D$ for the words within the window.  Specifically, let $w_{ij}$ represent the $j$ occurrence of target $i$. So the context vector for this word, $c_{ij}$, is given by 
 
-\begin{equation*}
-\label{eq:dsm}
+\begin{equation}
+\label{eq:context}
 c_{ij}=\sum_{h \in (w_{ij})_{\pm r}} D_{h}
-\end{equation*}
+\end{equation}
 
 \noindent where $D_{h}$ is  row $h$ of $D$ and $(w_{ij})_{\pm r}$ is the window of size $r$ around word, $w_{ij}$. 
 
-To calculate the semantic density for each target bin word, we began with the context vectors. We then estimated the average cosine similarity of all the context vectors for that word by randomly sampling 2 context vectors from the set and calculating the cosine similarity between them. This was performed over $n=1000$ iterations. The resulting values were averaged to produce the semantic density, $SD$, for that target word as shown below.
+To calculate the semantic density for each target bin word, we began with the context vectors. Let $C_{i}$ be the set of context vectors found in equation~\ref{eq:context} for target bin word $i$. We then estimated the average cosine similarity of all the context vectors for that word by randomly sampling 2 context vectors from the set, $C_{i}$ and calculated the cosine similarity between them. This was performed over $n=1000$ iterations. The resulting values were averaged to produce the semantic density, $SD$, for that target word as shown below.
 
 \begin{equation*}
-SD(w_{i}) = \frac{1}{n}\sum_{k=1}^{n} \frac{<c_{ik},c_{i(k+1)}>}{||c_{ik}||*||c_{i(k+1)}||}
+SD(w_{i}) = \frac{1}{n}\sum_{k=1}^{n} \frac{c_{ia_{k}}\cdotp c_{ib_{k}}}{||c_{ia_{k}}||* ||c_{ib_{k}}||}
 \end{equation*}
 
-To determine the effect of the hyperparameters on average context vector cosine similarity, and in turn prediction, the co-occurrence window length and the context window length were varied. Section~\ref{optimization} discusses the optimization of these parameters.
+\noindent where $a_{k}$, $b_{k}$ are randomly chosen from $C_{i}$ in iteration $k$. To determine the effect of the hyperparameters on average context vector cosine similarity, and in turn prediction, the co-occurrence window length and the context window length were varied. Section~\ref{optimization} discusses the optimization of these parameters.
 
 \subsection{Network Quantification}
 \label{subsect:network}
@@ -198,7 +199,7 @@ Finally, the network adjacency angle threshold was optimized. As discussed in Su
 
 To evaluate the effects of the hyperparameters on the semantic density and network signals, we conducted a grid search of the co-occurrence window, the context window and the network adjacency angle. By varying these parameters we sought to better understand the effects of these parameters on the linguistic signals and also to understand how these signals map to the linguistic flexibility of the  groups. 
 
-As shown in Figure \ref{fig:EVC_SD_surface} (a) the average semantic density of the groups was plotted against to the co-occurrence  and context vector window sizes. By plotting the average semantic density in relation to  co-occurrence window ranges of 2-6 and context window ranges of 2-6, Figure \ref{fig:EVC_SD_surface} (a) shows that an increase of these window sizes results in an increase of the average semantic density of the keywords. These results have an intuitive explanation. Increasing these window ranges allows for greater information to be held in the context vectors and, in turn, results in a cosine similarity closer to one. This figure also shows that a limit is reached at a co-occurrence window of 5 and a context vector window of 5, where the average semantic density settles just above an average cosine similarity of 0.75. This indicates that little gain can be achieved by increasing these window sizes further, as there would be little distinction in the average semantic density of the keywords in the analysis.
+For the random forest regression model Figure \ref{fig:EVC_SD_surface} (a) plots the average semantic density of the groups versus the co-occurrence  and context vector window sizes. By plotting the average semantic density in relation to  co-occurrence window ranges of 2-6 and context window ranges of 2-6, this figure shows that an increase of these window sizes results in an increase of the average semantic density of the keywords, although there are multiple modes. Overall these results have an intuitive explanation. Increasing the window ranges allows for greater information to be held in the context vectors and, in turn, results in a cosine similarity closer to one. This figure also shows that a limit is reached at a co-occurrence window of 5 and a context vector window of 5, where the average semantic density settles just above an average cosine similarity of 0.75. This indicates that little gain can be achieved by increasing these window sizes further, as there would be little distinction in the average semantic density of the keywords in the analysis.
 
 \begin{figure}[!h]
 \begin{center}
@@ -208,7 +209,7 @@ As shown in Figure \ref{fig:EVC_SD_surface} (a) the average semantic density of 
 \end{center}
 \end{figure}
 
-Next in Figure \ref{fig:EVC_SD_surface} (b) the co-occurrence window size and network angle are plotted against the average eigenvector centrality.  The average eigenvector centrality trends upward as the co-occurrence window size increases and the network adjacency angle decreases. These results also have intuitive explanations. An increase in the co-occurrence window size results in a greater connection between the words within the discourse, and the lower adjacency angle produces more edges between the nodes within the graphs. As eigenvector centrality is a bounded variable between 0 and 1, we see that the limit of 1 is nearly reached under the maximal conditions of 30 degrees and a co-occurrence window size of 6. We anticipate that this limit would be achieved by increasing the co-occurrence window or decreasing the network angle further.
+Figure \ref{fig:EVC_SD_surface} (b) contains the co-occurrence window size and network angle  plotted against the average eigenvector centrality for the SVM regression model.  Although there is distinct mode at a co-occurrence window of 5 and a context vector window of 3, generally the average eigenvector centrality trends upward as the co-occurrence window size increases and the network adjacency angle decreases. These results also have intuitive explanations. An increase in the co-occurrence window size results in a greater connection between the words within the discourse, and the lower adjacency angle produces more edges between the nodes within the graphs. As eigenvector centrality is a bounded variable between 0 and 1, we see that the limit of 1 is nearly reached under the maximal conditions of 30 degrees and a co-occurrence window size of 6. We anticipate that this limit would be achieved by increasing the co-occurrence window or decreasing the network angle further.
 
 
 To determine the relationship between average semantic density and group rank, the group rank is plotted against the average semantic density of the group, while varying the co-occurrence window and context vector.  This is shown in Figure \ref{fig:multipleAVGSD}.  In this figure the average semantic density is typically higher for groups with a lower rank. The range between the highest semantic density and the lowest semantic density appears to decrease as the co-occurrence window size and the context vector window size increases. The ideal configuration of co-occurrence window size and context vector window size would yield a linear relationship between semantic density and group rank, as that would provide a linear separation boundary for the learning algorithms used. With this in mind a visual inspection of Figure \ref{fig:multipleAVGSD} indicates that a lower configuration may provide this trend, although there is not an explicit separation for any of the configurations.
@@ -223,7 +224,7 @@ To determine the relationship between average semantic density and group rank, t
 
 Similar to the analysis above, we also analyzed the distribution of average eigenvector centrality to group rank, as the co-occurrence window and network adjacency angle are varied. From this we found no combination of network angle threshold, co-occurrence window size, and context vector window size within the search space that displays a visually discernible separation or trend between the output eigenvector centrality and the group rank. Hence, none of the configurations produce separable results. As this metric is determined through the selection of keywords, it appears that a different methodology is needed.
 
-With the performative-based signals we used support vector machine regression (SVM-R) and random forest regression to score the linguistic flexibility of the groups. Both methods can handle the bounded continuous response variable, as well as nonlinear input relations. In \newcite{venuti2016} these methods also outperformed the neural networks.
+With the tandem of performative and semantic based signals we used support vector machine regression (SVM-R) and random forest regression to score the linguistic flexibility of the groups. Both methods can handle the bounded continuous response variable, as well as nonlinear input relations. In \newcite{venuti2016} these methods also outperformed the neural networks.
 
 We calculated model performance given an allowed error margin of 1, as shown in Eq. \ref{eq:acc 1} and Eq. \ref{eq:acc 2}, to account for the natural fluctuations in linguistic flexibility.
 
@@ -288,3 +289,6 @@ when submitting your paper for review.
 \end{document}
 
    
+\grid
+\grid
+\grid
