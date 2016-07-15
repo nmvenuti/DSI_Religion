@@ -212,7 +212,7 @@ smallDF=addRank(smallDF)
 
 #Average Semantic Density verus Co-Occurrence and Coco Window side by side
 
-fig = plt.figure(figsize=(14,6))
+fig = plt.figure(figsize=(16,6))
 df=smallDF
 x='coco'
 y='cv'
@@ -236,7 +236,7 @@ ax.set_zlabel(zTitle)
 
 fig.colorbar(surf, shrink=0.5, aspect=5)
 plt.title(plotTitle)
-
+plt.subplots_adjust(wspace=0, hspace=0)
 
 df=smallDF
 x='netAng'
@@ -261,6 +261,7 @@ ax.set_zlabel(zTitle)
 
 fig.colorbar(surf, shrink=0.5, aspect=5)
 plt.title(plotTitle)
+plt.subplots_adjust(wspace=0, hspace=0)
 
 #Average Semantic Density verus Co-Occurrence and Coco Window individual
 surface3D(smallDF,'coco','cv','avgSD','Co-Occurrence Window','Context Vector Window', 'Average Semantic Density','Average Semantic Density versus Hyperparameters',plt.cm.Greens)
