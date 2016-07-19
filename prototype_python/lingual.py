@@ -9,6 +9,11 @@ Consolidation of all code used in lingustic analysis in single class to
 improve processing speeds and make analysis easier.
 
 """
+
+##################################################
+###Package import and local variable assignment###
+##################################################
+
 #Import packages
 import nltk
 import nltk.data
@@ -25,13 +30,13 @@ import igraph
 import scipy.spatial.distance as ssd
 
 
-###################################
-######Set up inital parameters#####
-###################################
+#Local variable assignment
 
-#Set function parameters for package
+#Set tokenizers, tagger and stemmer
 tokenizer = nltk.tokenize.treebank.TreebankWordTokenizer()
 sentTokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+stemmer = nltk.stem.snowball.EnglishStemmer()
+tagger = PerceptronTagger()
 
 #Get sentimentWord dict and remove duplicates. Store in lists
 posFilePath='./refData/positive-words.txt'
@@ -39,7 +44,8 @@ negFilePath='./refData/negative-words.txt'
 posWords=list(set(unicode(open(posFilePath).read(), "utf-8", errors="ignore")))
 negWords=list(set(unicode(open(negFilePath).read(), "utf-8", errors="ignore")))
 
-stemmer = nltk.stem.snowball.EnglishStemmer()
+#Assign user defined lists
+#Tokenization lists
 punctuation = set(string.punctuation)
 stopWords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers',
@@ -53,10 +59,6 @@ stopWords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you',
 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more',
 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so',
 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
-
-tagger = PerceptronTagger()
-
-
 
 #Part of speech lists
 nounList=['NN','NNS','NNP','NNPS']
@@ -80,42 +82,65 @@ def get_cosine(vec1,vec2):
 class lingualObject(object):
     '''Class to extract lingusitic singals
     
-    Paramameters
+    Attributes
     ============
-    filelist: list
-        List of files used
-    cocoWindow: int, default 6    
-    cvWindow: int, default 6
-    netAngle: float, default 30
-    useStem: boolean
-        True/False if stemming is used
-    useStopwords: boolean
-        True/False if stopwords are kept in vocabulary
+        cocoWindow: int, default 6    
+        cvWindow: int, default 6
+        netAngle: float, default 30
         
     Methods
     =======
-    Preprocessing:
-        creates tokens and pos-tagged documents
-    Keyword identiication:
-        identifies keywords
-    Co-Occurences:
-        develops co-occurrence dictionary based on co-occurrence window
-    DSM:
-        reduces cocoDict based on dimensions
-    Context Vectors:
-        developes context vector dictionary based on keyword list
-    Semantic Density Analysis:
-        returns semantic density of keywords
-    Network Analysis:
-        returns network quantification of keywords
-    Sentiment Analysis:
-        returns sentiment ranking for documents
-    Judgement Analysis:
-        returns judgement quantification for documents
+    __init__:
+        Initializes object,performs preprocessing including:
+            Text normalization
+            Tokenization
+            Sentence Identification
+    getCoco:
+        Creates co-occurence matrix stored in dictionary
+    getDSM:
+        Creates reduced DSM from co-occurrence matrix using SVD
+    setKeywords:
+        Automatically defines keywords.
+        Note: need to look at other methods of keyword identification
+    getContextVectors:
+        Creates dictionary of context vectors for words in keyword list
+    getSD:
+        Performs monte carlos estimation of average cosine similarity of context 
+        vectors for each keyword
+    judgements:
+        Calculates count of judgements and percent of judgement senteces per doc
+    sentimentLookup:
+        Calculates percent of positive and negative words in each document and
+        if document is positive or negative
+    getNetwork:
+        Creates network from adjacency matrix of based on values from DSM
+    evc:
+        Calculates eigenvector centrality for keywords based on network
         
     '''
     #Initialize and perform preprocessing
     def __init__(self,fileList,useStem=True,useStopwords=True):
+        '''
+        Initialization of lingualObject
+        
+        Inputs
+        ======
+        filelist: list
+            List of files used
+        useStem: boolean
+            True/False if stemming is used (Default is True)
+        useStopwords: boolean
+            True/False if stopwords are kept in vocabulary (Default is True)
+        
+        Attributes
+        ==========
+        rawText: dict
+            Dictionary of cleaned text with filenames as keys and string as values
+        tokens: dict
+            Dictionary of tokens with filenames as keys and list of tokens as values
+        sentences:
+            Dictionary of sentences with filenames as keys and list of sentences as values
+        '''
         #Define parameters
         self.fileList=fileList       
         self.useStem=useStem
@@ -182,6 +207,27 @@ class lingualObject(object):
     ###Create cocoDict,TF###
     ########################
     def getCoco(self,k=6):
+        '''
+        function to create co-occurrence matrix based on provided window size
+        
+        Inputs
+        ======
+        k: int
+            Window size used to define co-occurrence matrix (Default is 6)
+        
+        Attributes
+        ==========
+        cocoWindow: int
+            Stores k value
+        cocoDict: dict
+            Dictionary of co-occurrence counts with target word as key1, 
+            co-occurring word as key2 and count as values
+        TF: dict
+            Dictionary of tokens with words as keys and counts as values
+        docTF:
+            Dictionary of sentences with filenames as key1, word as key2 and 
+            count of words as values
+        '''
         self.cocoWindow=k
         self.cocoDict={}
         self.TF={}
@@ -227,7 +273,25 @@ class lingualObject(object):
     ###Create DSM###
     ################
     def getDSM(self,k=50):
+        '''
+        function to create DSM to reduce computational load by reducing co-occurrence
+        matrix through SVD
+        
+        Inputs
+        ======
+        k: int
+            Number of components to reduce to through truncated SVD (default 50)
+        
+        Attributes
+        ==========
+        svdK: int
+            Stores k value
+        DSM: dict
+            Dictionary of reduced co-occurrence counts with target word as key1, 
+            component as key2 and svd value as values
+        '''
         #Define DSM
+        self.svdK=k
         self.DSM={}
 
         #Convert cocoDict to list of lists
@@ -254,6 +318,30 @@ class lingualObject(object):
     ###Set Up keywords###
     #####################
     def setKeywords(self,method='adjAdv',wordCount=10,startCount=0):
+        '''
+        function to automatically assign keywords if manual ones have not been assigned
+        
+        Inputs
+        ======
+        method: string
+            Method used to pick automatically defined keywords. Choose from:
+            adjAdv- picks most common adj and adv in text (default)
+            judgement-Under development
+        wordCount: int
+            Number of keywords returned (default 10)
+        startCount: int
+            Index where keywords are extracted (default 0 i.e. start of list)
+        
+        Attributes
+        ==========
+        keywords: list
+            List of keywords automatically generated (can also be assigned 
+            outside of function manually)
+        '''
+        #Save input values
+        self.keywordCount=wordCount
+        self.keywordStar=startCount
+        
         #Need to set up other keyword methods
         #Get total text string
         txtString=''.join([x for x in self.rawText.values()])
@@ -286,13 +374,30 @@ class lingualObject(object):
     ###Get context vectors for keywords###
     ######################################
     def getContextVectors(self,k=6):
+        '''
+        function to extract  context vectors from text based on keywords and window size
         
+        Inputs
+        ======
+        k: int
+            Window size used to define context vectors (Default is 6)
+        
+        Attributes
+        ==========
+        cvWindow: int
+            Stores k value
+        cvDict: dict
+            Dictionary of context vectors with filename as key1, 
+            keyword as key2, instance as key3 and svd value as values
+        '''       
         #Define cv dict
+        self.cvWindow=k
         self.cvDict={}
         
         for fileName in self.fileList:
             self.cvDict[fileName]={}
             for i in range(len(self.tokens[fileName])):
+                
                 #Adjust window to contain words k in front or k behind
                 lowerBound=max(0,i-k)
                 upperBound=min(len(self.tokens[fileName]),i+k)
@@ -308,6 +413,7 @@ class lingualObject(object):
                     #Create context vector            
                     contextVector={}
                     
+                    #Update word counts for context vectors
                     for word in cvList:
                         for key in self.DSM[word].keys():                    
                             #Update context vector
@@ -324,8 +430,29 @@ class lingualObject(object):
     ###Get average semantic density of keywords###
     ##############################################
     def getSD(self,sim=1000):
+        '''
+        Function to generate monte carlo estimation of cosine similarity from
+        context vectors for each keywor
+        
+        Inputs
+        ======
+        sim: int
+            Number of simulations (default is 100)
+        
+        Attributes
+        ==========
+        sdSimCount: int
+            Stores sim value
+        cosineResults: list
+            List of lists containing id word and average cosine similarity
+            for each word in keywords
+        '''     
+        #Initialize parameters
+        self.sdSimCount=sim
         subCV={}
         cosineResults=[]
+        
+        #Loop through each file and reduce context vectors to word based dictionary for faster lookups
         for fileName in self.fileList:
             for word in self.cvDict[fileName].keys():
                 #Add word if not in keys
@@ -333,8 +460,12 @@ class lingualObject(object):
                     subCV[word]={}
                 for i in range(len(self.cvDict[fileName][word])):
                     subCV[word][len(subCV[word])+1]=self.cvDict[fileName][word][i+1]
+        
+        #Loop through each keyword and calculate semantic density
         for searchWord in self.keywords:
-            try: 
+            #Ensure search word is in context vector dictionary
+            try:
+                #If more than one instance of search word present calculate average semantic density
                 if len(subCV[searchWord])>1:
                     consineSim=np.zeros(sim)
                     for i in range(sim):
@@ -343,8 +474,10 @@ class lingualObject(object):
                     
                         consineSim[i]=get_cosine(subCV[searchWord][x+1],subCV[searchWord][y+1])
                     approx_avg_cosine=np.average(consineSim)
+                #Otherwise return negative 1
                 else:
                     approx_avg_cosine=-1
+            #otherwise return NA
             except KeyError:
                 approx_avg_cosine = np.NaN
             cosineResults.append([searchWord,approx_avg_cosine])
@@ -354,6 +487,16 @@ class lingualObject(object):
     ###Get Judgement counts and percentages###
     ##########################################
     def judgements(self):
+        '''
+        Function to estimate number of judgements and the percent of sentences
+        that are judgements for each document in the filelist
+        
+        Attributes
+        ==========
+        judgementList: list
+            List of lists containing document filepath, count of judgements, and percent
+            of sentences in document that are judgements
+        '''     
         #Define judgement list
         judgementList=[]
         
@@ -364,10 +507,12 @@ class lingualObject(object):
             for sent in self.sentences[fileName]:
                 tagList=tagger.tag(nltk.word_tokenize(sent))
                 
-                #Look for combination of noun-adj-to_be verb in order        
+                #Look for combination of noun-adj-to_be verb in order  
+                #Initialize search flags
                 nounFlag=False
                 adjFlag=False
-        
+                
+                #Loop through all tags
                 for tag in tagList:
                     #Check if noun flag activated
                     if nounFlag:
@@ -386,8 +531,11 @@ class lingualObject(object):
                     else:
                         if tag[1] in nounList:
                             nounFlag=True
-        
+            
+            #Calculate percent of sentences that are judgements
             judgementPercent=float(judgementCount)/len(self.sentences[fileName])
+            
+            #Return filename and judgement metrics
             judgementList.append([fileName,judgementCount,judgementPercent])
         
         #Return judgement numbers for each document
@@ -397,7 +545,18 @@ class lingualObject(object):
     ###Sentiment###
     ###############
     def sentimentLookup(self):
+        '''
+        Function to estimate sentiment of documents
+        
+        Attributes
+        ==========
+        output: list
+            List of average percent of positive words, percent of negative words,
+            percent of positive documents, and percent of negative documents
+        '''             
+        #Initialize list
         fileSentiment=[]
+        
         #Get sentiment for each document
         for filename in self.tokens.keys():
             
@@ -439,6 +598,23 @@ class lingualObject(object):
     ###Network Analysis###
     ######################
     def setNetwork(self,netAngle=30):
+        '''
+        Function to create network from DSM with edges assigned to word pairs
+        with cosine similarity within a defined angle
+        
+        Inputs
+        ======
+        netAngle: int
+            Threshold network angle (default is 30)
+        
+        Attributes
+        ==========
+        network: object
+            Network object from igraph package
+        '''             
+        #Store parameters
+        self.netAngle=netAngle        
+        
         #Get list of values in DSM
         dsmList=[x.values() for x in self.DSM.values()]
         
@@ -459,7 +635,16 @@ class lingualObject(object):
         self.network=net
     
     def evc(self):
+        '''
+        Function to calculate eigenvector centrality from network for each word
+        in keywords list
         
+        
+        Attributes
+        ==========
+        meanEVC: float
+            Average eigenvector centrality of words in keywords list
+        '''         
         #Get eigenvector centrality
         ev_centrality = igraph.Graph.evcent(self.network)
         
