@@ -15,6 +15,7 @@ improve processing speeds and make analysis easier.
 ##################################################
 
 #Import packages
+import os
 import nltk
 import nltk.data
 from nltk.tag.perceptron import PerceptronTagger
@@ -76,6 +77,31 @@ def get_cosine(vec1,vec2):
     sum2 = sum([vec2[x]**2 for x in vec2.keys()])
     denominator = math.sqrt(sum1) * math.sqrt(sum2)
     return float(numerator/denominator)
+
+def randomBin(groupList,rawFileList,runDirectory,validations,testSplit,groupSize):
+    for fold in range(validations-1):
+        #Loop through each group and create sub bins
+        fileList=[]
+        for groupId in groupList:
+            subGroup=[x for x in rawFileList if groupId == x[0]]
+            randomSample=list(np.random.choice(range(len(subGroup)),size=len(subGroup),replace=False))
+            splitIndex=int((1-testSplit)*len(subGroup))
+            groupId=['train'+ "%02d" %int(i/groupSize) if i<splitIndex else 'test'+ "%02d" %int((i-splitIndex)/groupSize) for i in randomSample]
+            
+            fileList=fileList+[[subGroup[i][0],subGroup[i][1],groupId[i]] for i in range(len(subGroup))]
+        
+        fileDF=pd.DataFrame(fileList,columns=['group','filepath','subgroup'])
+        
+        
+#        #Get set of subgroups
+#        subgroupList=[ list(y) for y in set((x[0],x[2]) for x in fileList) ]
+        
+        #Make output directory
+        outputDirectory=runDirectory+'/run'+str(fold)
+        os.makedirs(outputDirectory)
+        
+        #Print file splits to runDirectory
+        fileDF.to_csv(outputDirectory+'/fileSplits.csv')
 
 
 #Define main class
