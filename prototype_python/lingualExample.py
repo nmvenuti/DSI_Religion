@@ -40,8 +40,12 @@ loTest.getCoco()
 #Test DSM
 loTest.getDSM()
 
-#Test keywords
+#Test keywords with default and judgements method
 loTest.setKeywords()
+loTest.keywords
+
+loTest.setKeywords('judgement')
+loTest.keywords
 
 #Test context vectors
 loTest.getContextVectors()
@@ -50,7 +54,7 @@ loTest.getContextVectors()
 loTest.getSD()
 
 #Test judgements
-loTest.judgements()
+loTest.getJudgements()
 
 #Test sentiment
 loTest.sentimentLookup()
@@ -60,6 +64,7 @@ loTest.setNetwork()
 
 #Test evc
 loTest.evc()
+
 
 print(str(time.time()-startTime))
 

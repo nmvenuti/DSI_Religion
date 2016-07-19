@@ -107,7 +107,7 @@ class lingualObject(object):
     getSD:
         Performs monte carlos estimation of average cosine similarity of context 
         vectors for each keyword
-    judgements:
+    getJudgements:
         Calculates count of judgements and percent of judgement senteces per doc
     sentimentLookup:
         Calculates percent of positive and negative words in each document and
@@ -140,6 +140,8 @@ class lingualObject(object):
             Dictionary of tokens with filenames as keys and list of tokens as values
         sentences:
             Dictionary of sentences with filenames as keys and list of sentences as values
+        judgements:
+            Dictionary of judgements with filenames as keys and list of judgements as values
         '''
         #Define parameters
         self.fileList=fileList       
@@ -150,10 +152,11 @@ class lingualObject(object):
         ###Get text objects###
         ######################
         
-        #define rawText, tokens, and sentences
+        #define rawText, tokens, sentences, and judgements
         self.rawText={}
         self.tokens={}
         self.sentences={}
+        self.judgements={}
         
         #extract raw text from each file in fileList and create tokens
         for fileName in fileList:   
@@ -175,6 +178,36 @@ class lingualObject(object):
             sentList=list(sentTokenizer.tokenize(txtString))
             self.sentences[fileName]=sentList
             
+            #Loop through sentences and add to judgement dictionary if meets criteria
+            judgementList=[]
+            for sent in sentList:
+                tagList=tagger.tag(nltk.word_tokenize(sent))
+                
+                #Look for combination of noun-adj-to_be verb in order  
+                #Initialize search flags
+                nounFlag=False
+                adjFlag=False
+                
+                #Loop through all tags
+                for tag in tagList:
+                    #Check if noun flag activated
+                    if nounFlag:
+                        #If noun flag activated check if adj flag activated
+                        if adjFlag:
+                            #If adjective flag activated check if word is to-be verb
+                            if tag[0] in toBeList:
+                                #If true, count as judgement, exit loop
+                                judgementList.append(sent)
+                                break
+                        #if adj flag not activated check if tag is adjective
+                        else:
+                            if tag[1] in adjList:
+                                adjFlag=True
+                    #if noun flag not activated check if tag is noun
+                    else:
+                        if tag[1] in nounList:
+                            nounFlag=True
+            self.judgements[fileName]=judgementList
             #Create tokens
             #Convert all text to lower case
             textList=[word.lower() for word in tokenList]
@@ -325,7 +358,8 @@ class lingualObject(object):
         ======
         method: string
             Method used to pick automatically defined keywords. Choose from:
-            adjAdv- picks most common adj and adv in text (default)
+            adjAdv- picks most common adj and adv in text (default and 
+                catch if other method doesn't exist)
             judgement-Under development
         wordCount: int
             Number of keywords returned (default 10)
@@ -342,33 +376,63 @@ class lingualObject(object):
         self.keywordCount=wordCount
         self.keywordStar=startCount
         
-        #Need to set up other keyword methods
-        #Get total text string
-        txtString=''.join([x for x in self.rawText.values()])
+        #Judgement method
+        if method=='judgement':
+            posList=nounList+tagFilterList
+            #Define target dict
+            targetDict={}
+            for fileName in self.fileList:
+                for judgementStr in self.judgements[fileName]:
+                    tagList=tagger.tag(nltk.word_tokenize(judgementStr))
+            
+                    
+                    #Loop through each tag in list and get count of tag and word
+                    for tag in tagList:
+                        if tag[1] in posList:
+                            word=str.lower(''.join([c for c in tag[0] if c not in string.punctuation]))
+                            #Filter out codecerrors
+                            if word != 'codecerror':
+                                try:
+                                    targetDict[word]=targetDict[word]+1
+                                except:
+                                    targetDict[word]=1
+            #Create data frame with counts and sort
+            targetDF=pd.DataFrame([[k,v] for k,v in targetDict.items()],columns=['word','count'])
+            targetDF.sort(['count'],inplace=True,ascending=False)
+            
+            #Create keywords based on startCount and wordCount
+            self.keywords=list(targetDF['word'])[startCount:wordCount+startCount]
+            
+        #Default to 'adjAdv'
+        elif method=='adjAdv':
+            #Get total text string
+            txtString=''.join([x for x in self.rawText.values()])
+            
+            #Get total tag list
+            tagList=tagger.tag(nltk.word_tokenize(txtString))
+            
+            #Define target dict
+            targetDict={}
+            
+            #Loop through each tag in list and get count of tag and word
+            for tag in tagList:
+                if tag[1] in tagFilterList:
+                    word=str.lower(''.join([c for c in tag[0] if c not in string.punctuation]))
+                    #Filter out codecerrors
+                    if word != 'codecerror':
+                        try:
+                            targetDict[word]=targetDict[word]+1
+                        except:
+                            targetDict[word]=1
         
-        #Get total tag list
-        tagList=tagger.tag(nltk.word_tokenize(txtString))
-        
-        #Define target dict
-        targetDict={}
-        
-        #Loop through each tag in list and get count of tag and word
-        for tag in tagList:
-            if tag[1] in tagFilterList:
-                word=str.lower(''.join([c for c in tag[0] if c not in string.punctuation]))
-                #Filter out codecerrors
-                if word != 'codecerror':
-                    try:
-                        targetDict[word]=targetDict[word]+1
-                    except:
-                        targetDict[word]=1
-        
-        #Create data frame with counts and sort
-        targetDF=pd.DataFrame([[k,v] for k,v in targetDict.items()],columns=['word','count'])
-        targetDF.sort(['count'],inplace=True,ascending=False)
-        
-        #Create keywords based on startCount and wordCount
-        self.keywords=list(targetDF['word'])[startCount:wordCount+startCount]
+            #Create data frame with counts and sort
+            targetDF=pd.DataFrame([[k,v] for k,v in targetDict.items()],columns=['word','count'])
+            targetDF.sort(['count'],inplace=True,ascending=False)
+            
+            #Create keywords based on startCount and wordCount
+            self.keywords=list(targetDF['word'])[startCount:wordCount+startCount]
+        else:
+            print('ERROR: Method not found')
     
     ######################################
     ###Get context vectors for keywords###
@@ -486,7 +550,7 @@ class lingualObject(object):
     ##########################################
     ###Get Judgement counts and percentages###
     ##########################################
-    def judgements(self):
+    def getJudgements(self):
         '''
         Function to estimate number of judgements and the percent of sentences
         that are judgements for each document in the filelist
@@ -502,35 +566,8 @@ class lingualObject(object):
         
         #Loop through each document
         for fileName in self.fileList:
-            judgementCount=0    
-            #Loop through each sentence in file
-            for sent in self.sentences[fileName]:
-                tagList=tagger.tag(nltk.word_tokenize(sent))
-                
-                #Look for combination of noun-adj-to_be verb in order  
-                #Initialize search flags
-                nounFlag=False
-                adjFlag=False
-                
-                #Loop through all tags
-                for tag in tagList:
-                    #Check if noun flag activated
-                    if nounFlag:
-                        #If noun flag activated check if adj flag activated
-                        if adjFlag:
-                            #If adjective flag activated check if word is to-be verb
-                            if tag[0] in toBeList:
-                                #If true, count as judgement, exit loop
-                                judgementCount=judgementCount+1
-                                break
-                        #if adj flag not activated check if tag is adjective
-                        else:
-                            if tag[1] in adjList:
-                                adjFlag=True
-                    #if noun flag not activated check if tag is noun
-                    else:
-                        if tag[1] in nounList:
-                            nounFlag=True
+            #Get count of judgements
+            judgementCount=len(self.judgements[fileName])
             
             #Calculate percent of sentences that are judgements
             judgementPercent=float(judgementCount)/len(self.sentences[fileName])
