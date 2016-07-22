@@ -416,8 +416,19 @@ class lingualObject(object):
                     for tag in tagList:
                         if tag[1] in posList:
                             word=str.lower(''.join([c for c in tag[0] if c not in string.punctuation]))
+                            #Stem words if useStem True
+                            newStopWords=stopWords
+                            if self.useStem:
+                                word=stemmer.stem(word)
+                                newStopWords=[stemmer.stem(x) for x in stopWords]
+                             
+                            #Remove stopwords if useStopwords ==False
+                            if not self.useStopwords: 
+                                newStopWords.append("")
+
+                                
                             #Filter out codecerrors
-                            if word != 'codecerror':
+                            if word not in ['codecerror']+[' ']+newStopWords:
                                 try:
                                     targetDict[word]=targetDict[word]+1
                                 except:

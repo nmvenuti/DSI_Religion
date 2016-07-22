@@ -15,7 +15,7 @@ import time
 start=time.time()
 import sys, os
 
-#os.chdir('./github/nmvenuti/DSI_Religion/')
+os.chdir('./github/nmvenuti/DSI_Religion/')
 #from joblib import Parallel, delayed
 #import multiprocessing as mp
 import os.path
@@ -23,11 +23,12 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 sys.path.append('./prototype_python/')
+import lingual as la
 import nltk
 nltk.download('punkt')
 nltk.download('maxent_treebank_pos_tagger')
 nltk.download('averaged_perceptron_tagger')
-import lingual as la
+
 
 end=time.time()
 #sys.stdout = open("output.txt", "a")
@@ -163,11 +164,6 @@ def runMaster(rawPath,groupList,crossValidate,groupSize,targetWordCount,startCou
         outputDF=pd.DataFrame(masterOutput,columns=['groupId','files','timeRun','perPos','perNeg','perPosDoc','perNegDoc','judgementCount','judgementFrac','avgSD','avgEVC'])
         outputDF.to_csv(outputDirectory+'/masterOutput.csv')
 
-        
-    
-
-
-
 #Set inital conditions and run
 if __name__ == '__main__':
     startTimeTotal=time.time()
@@ -178,8 +174,8 @@ if __name__ == '__main__':
 #    cvWindow=int(sys.argv[2])
 #    startCount=int(sys.argv[3])
 #    netAngle=int(sys.argv[4])
-    cocoWindow=2
-    cvWindow=2
+    cocoWindow=3
+    cvWindow=3
     startCount=0
     netAngle=30
     crossValidate=1

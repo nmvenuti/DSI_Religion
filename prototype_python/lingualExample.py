@@ -15,6 +15,7 @@ os.chdir('./github/nmvenuti/DSI_Religion/')
 #import multiprocessing as mp
 import os.path
 import pandas as pd
+import numpy as np
 sys.path.append('./prototype_python/')
 import lingual as la
 
@@ -47,15 +48,17 @@ loTest.keywords
 loTest.setKeywords('judgement')
 loTest.keywords
 
+
 #Test context vectors
 loTest.getContextVectors()
 
 #Test get average semantic density
 loTest.getSD()
+np.mean([x[1] for x in loTest.getSD(1000)])
 
 #Test judgements
 loTest.getJudgements()
-
+list(np.mean(np.array([[x[1],x[2]] for x in loTest.getJudgements()]),axis=0))
 #Test sentiment
 loTest.sentimentLookup()
 
@@ -65,8 +68,38 @@ loTest.setNetwork()
 #Test evc
 loTest.evc()
 
-
-print(str(time.time()-startTime))
+#Subgraph centrality development
+#import igraph
+#import random
+#import scipy.spatial.distance as ssd
+#import math
+#import numpy as np
+##Get list of values in DSM
+#dsmList=[x.values() for x in loTest.DSM.values()]
+#netAngle=30
+##Calculate distances for each set of values in dsm
+#cosineNP=ssd.cdist(dsmList,dsmList,metric='cosine')
+#
+#adj = cosineNP.copy()
+#
+##Apply thresholds
+#adj[np.abs(cosineNP) >= math.cos(math.radians(netAngle))] = 0 # Converting 3threshold to radians to a cosine value
+#
+#adj[np.abs(cosineNP) < math.cos(math.radians(netAngle))] = 1 # Converting threshold to radians to a cosine value
+#x=loTest.DSM.keys()
+#adjList = pd.DataFrame(adj,columns=loTest.DSM.keys(),index=loTest.DSM.keys()).values.tolist()
+#graph = loTest.network
+#
+#for keyword in loTest.keywords:
+#	subgraph_vertex_list = [v.index for v in graph.vs if x[v] in lo]
+#	subgraph = igraph.Graph.subgraph(graph, subgraph_vertex_list)
+#
+#	centrality = sum(subgraph.betweenness()) / sample_size
+#	density = subgraph.density()
+#
+#	print 'Subsample %s has average centrality %f, density %f' % (keyword, centrality, density)
+#
+#print(str(time.time()-startTime))
 
 
 #define function for multiple filecuts
