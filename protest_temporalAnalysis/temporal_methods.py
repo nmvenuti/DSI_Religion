@@ -20,6 +20,8 @@ import random
 import nltk
 tokenizer = nltk.tokenize.treebank.TreebankWordTokenizer()
 import string
+import datetime
+import imp
 
 # Sklearn
 from sklearn.metrics import accuracy_score
@@ -33,7 +35,7 @@ punctuation = set(string.punctuation)
 
 # In[4]:
 
-os.chdir('../prototype_python')
+# os.chdir('../prototype_python')
 
 
 # In[5]:
@@ -136,7 +138,7 @@ def tokenize34(path2File, file):
     tokens={}
     # print(path2File+file)
     #Clean raw text into token list
-    rawText=open(path2File+file, encoding = "latin1").read()
+    rawText=open(path2File+file, errors='ignore').read()
     # rawText=unicode(rawText, "utf-8", errors="ignore")
     #Update for encoding issues            
     # rawText=unicode(rawText, "utf-8", errors="ignore")
@@ -240,8 +242,8 @@ def averageCosine(cvDict,simCount):
 # Get sentimentWord dict and remove duplicates. Store in lists
 posFilePath='/refData/positive-words.txt'
 negFilePath='/refData/negative-words.txt'
-posWords=list(set(tokenize34('..',posFilePath)))
-negWords=list(set(tokenize34('..',negFilePath)))
+posWords=list(set(tokenize34('.',posFilePath)))
+negWords=list(set(tokenize34('.',negFilePath)))
 
 
 # In[2]:
@@ -295,4 +297,106 @@ def getRawText(path2File, file):
     rawText=open(path2File+file, encoding='latin1').read()
     #rawText=str(unicode(rawText, "utf-8", errors="ignore"))
     return rawText
+
+
+# ## Function to Load Metadata from Files (Dorothy, WBC, and simple)
+
+# In[1]:
+
+def getDorothyDaymetadata(dataloc):
+
+    files = os.listdir(dataloc)
+
+    files = [file for file in files if '.txt' in file]
+
+    fileData = pd.DataFrame(files, columns = ['fileName'])
+
+    firstlines = []
+    for file in fileData.fileName:
+        text = rawText=open(dataloc+"/"+file, encoding = 'latin1').read()
+        lineone = text[0:text[1:len(text)].find('\n')+1]
+        lineone = re.sub('\nThe Catholic Worker, ','',lineone)
+        firstlines.append(lineone)
+
+    fileData['firstline'] = firstlines
+
+    # Building Parsing for Dates in DD Files
+    date_est = []
+    for i in range(0,len(fileData)):
+        if fileData.loc[i,'firstline'][0] == '\n':
+            # print(fileData.loc[i,'firstline'][0])
+            # print("Drop")
+            date_est.append('unclear date')
+        else:
+            # print(fileData.loc[i,'firstline'][0])
+            # print("Keep")
+            pieces = fileData.loc[i,'firstline'].split(" ")
+            if len(pieces[1]) != 5:
+                date_est.append('unclear date')
+            else:
+                date_est.append(pieces[0]+', '+pieces[1][0:4])
+                # print(pieces)
+
+    fileData['date_est'] = date_est
+
+    datelist = []
+    for date in date_est:
+        try:
+            datelist.append(datetime.datetime.strptime(date, '%B, %Y'))
+        except ValueError:
+            temp = re.split('[-,/]',date)
+            temp = temp[0]+','+temp[len(temp)-1]
+            try: 
+                temp = datetime.datetime.strptime(temp, '%B, %Y')
+                datelist.append(temp)
+            except ValueError:
+                try: 
+                    temp = datetime.datetime.strptime(temp, '%b, %Y')
+                    datelist.append(temp)
+                except ValueError:
+                    datelist.append("unclear date")
+
+    fileData['date_clean'] = datelist
+    
+    fileData[fileData.date_clean == 'unclear date'] = np.NaN
+    fileData = fileData.dropna()
+    fileData = fileData[fileData.date_clean > datetime.datetime(1900, 1, 1, 0, 0)]
+    del fileData['date_est']
+    del fileData['firstline']
+    fileData.reset_index(inplace=True, drop=True)
+    
+    fileData.sort_values(by='date_clean', ascending=True, inplace=True)
+    
+    return fileData
+
+
+# In[ ]:
+
+def getSimplemetadata(dataloc):
+    'Loads File Metadata when Date is 1st Item in FileName e.g. 2 March 2017'
+    files = os.listdir(dataloc)
+    files = [file for file in files if '.txt' in file]
+    fileData = pd.DataFrame(files, columns = ['fileName'])
+    temp = [file.split('_')[0] for file in files]
+    fileData['date'] = temp
+    # Convert Str Dates to Date-Time Objects
+    dates_clean = [datetime.datetime.strptime(date,'%d %B %Y') for date in fileData.date]
+    fileData['date_clean'] = dates_clean
+    fileData.sort_values(by='date_clean', ascending=True, inplace=True)
+    return fileData
+
+
+# In[ ]:
+
+def getWBCmetadata(dataloc):
+    files = os.listdir(dataloc)
+    files = [file for file in files if '.txt' in file]
+    fileData = pd.DataFrame(files, columns = ['fileName'])
+    temp = [file.split('_')[2][0:8] for file in files]
+    fileData['date'] = temp
+    # Convert Str Dates to Date-Time Objects
+    dates_clean = [datetime.datetime.strptime(date,'%Y%m%d') for date in fileData.date]
+    fileData['date_clean'] = dates_clean
+    fileData.sort_values(by='date_clean', ascending=True, inplace=True)
+    return fileData
 
